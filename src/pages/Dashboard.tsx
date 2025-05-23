@@ -291,12 +291,10 @@ const Dashboard: React.FC = () => {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold">My Events</h2>
-                  {authState.user.team && (
-                    <button className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-md transition-colors duration-200">
-                      <PlusCircle className="h-5 w-5" />
-                      <span>Create Event</span>
-                    </button>
-                  )}
+                  <button className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-md transition-colors duration-200">
+                    <PlusCircle className="h-5 w-5" />
+                    <span>Create Event</span>
+                  </button>
                 </div>
                 
                 {userEvents.length > 0 ? (
@@ -353,17 +351,14 @@ const Dashboard: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-medium text-gray-700 mb-2">No events found</h3>
-                    <p className="text-gray-500 mb-4">You haven't created any events yet.</p>
-                    {authState.user.team && (
-                      <button className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-md transition-colors duration-200 mx-auto">
-                        <PlusCircle className="h-5 w-5" />
-                        <span>Create First Event</span>
-                      </button>
-                    )}
-                  </div>
+                  <EmptySection
+                    icon={
+                      <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    }
+                    title="No events found"
+                    description="You haven't created any events yet."
+                    buttonText="Create First Event"
+                  />
                 )}
               </div>
             )}
