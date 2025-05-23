@@ -213,11 +213,12 @@ const EventDetails: React.FC = () => {
                   <div className="mb-6">
                     <button
                       onClick={handleJoin}
+                      disabled={event.canceled}
                       className={`w-full py-3 px-4 rounded-md font-bold ${
                         isJoined 
                           ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' 
                           : 'bg-orange-500 text-white hover:bg-orange-600'
-                      } transition-colors duration-200`}
+                      } transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       {isJoined ? 'Leave Event' : 'Join Event'}
                     </button>
