@@ -42,6 +42,7 @@ export interface Event {
   participants: User[];
   createdAt: string;
   field: "Mato" | "CQB" | "Misto";
+  canceled: boolean;
 }
 
 // Marketplace types

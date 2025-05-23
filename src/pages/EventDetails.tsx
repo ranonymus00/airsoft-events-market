@@ -34,12 +34,26 @@ const EventDetails: React.FC = () => {
     );
   }
 
+  const [isEditing, setIsEditing] = useState(false);
+  const canEdit = authState.user?.team?.id === event?.team.id;
+
   const handleJoin = () => {
     if (!authState.isAuthenticated) {
       alert('Please log in to join this event');
       return;
     }
+    if (event.canceled) {
+      alert('This event has been canceled');
+      return;
+    }
     setIsJoined(!isJoined);
+  };
+
+  const handleCancelEvent = () => {
+    if (!canEdit) return;
+    // Here you would typically make an API call to update the event
+    // For now we'll just show an alert
+    alert('Event canceled');
   };
   
   const handleShare = () => {
@@ -77,6 +91,27 @@ const EventDetails: React.FC = () => {
       </div>
       
       <div className="container mx-auto px-4">
+        {event.canceled && (
+          <div className="bg-red-500 text-white text-center py-4 mb-4 rounded-md">
+            <h2 className="text-2xl font-bold">This Event Has Been Canceled</h2>
+          </div>
+        )}
+        {canEdit && (
+          <div className="mb-4 flex justify-end space-x-2">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+            >
+              Edit Event
+            </button>
+            <button
+              onClick={handleCancelEvent}
+              className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+            >
+              {event.canceled ? 'Reactivate Event' : 'Cancel Event'}
+            </button>
+          </div>
+        )}
         <div className="bg-white shadow-md rounded-lg -mt-20 relative z-10">
           <div className="p-6 md:p-8">
             <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">

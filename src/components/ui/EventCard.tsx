@@ -23,8 +23,17 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
   return (
     <Link 
       to={`/events/${event.id}`}
-      className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+      className={`bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative ${
+        event.canceled ? 'opacity-75' : ''
+      }`}
     >
+      {event.canceled && (
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="bg-red-500 text-white px-4 py-2 rounded-full transform rotate-45 text-lg font-bold">
+            CANCELED
+          </div>
+        </div>
+      )}
       <div className="relative">
         <img 
           src={event.image} 
