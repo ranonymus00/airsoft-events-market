@@ -430,15 +430,14 @@ const Dashboard: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-medium text-gray-700 mb-2">No listings found</h3>
-                    <p className="text-gray-500 mb-4">You haven't created any listings yet.</p>
-                    <button className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-md transition-colors duration-200 mx-auto">
-                      <PlusCircle className="h-5 w-5" />
-                      <span>Create First Listing</span>
-                    </button>
-                  </div>
+                  <EmptySection
+                    icon={
+                      <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    }
+                    title="No listings found"
+                    description="You haven't created any listings yet."
+                    buttonText="Create First Listing"
+                  />
                 )}
               </div>
             )}
