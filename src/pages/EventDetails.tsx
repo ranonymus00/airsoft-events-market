@@ -16,17 +16,21 @@ import {
 import { format } from "date-fns";
 import { mockEvents } from "../data/mockData";
 import { useAuth } from "../contexts/AuthContext";
+import EventRegistrationForm from "../components/ui/EventRegistrationForm";
+import EventRegistrationStatus from "../components/ui/EventRegistrationStatus";
+import EventRegistrationsList from "../components/ui/EventRegistrationsList";
 
 const EventDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const event = mockEvents.find((event) => event.id === id);
   const { authState } = useAuth();
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
 
-  const [isJoined, setIsJoined] = useState(
-    event?.participants.some(
-      (participant) => participant.id === authState.user?.id,
-    ),
+  const userRegistration = event?.registrations.find(
+    reg => reg.userId === authState.user?.id
   );
+
+  const isEventOwner = authState.user?.team?.id === event?.team.id;
 
   if (!event) {
     return (
@@ -47,40 +51,14 @@ const EventDetails: React.FC = () => {
     );
   }
 
-  const [isEditing, setIsEditing] = useState(false);
-  const canEdit = authState.user?.team?.id === event?.team.id;
-
-  const handleJoin = () => {
-    if (!authState.isAuthenticated) {
-      alert("Please log in to join this event");
-      return;
-    }
-    if (event.canceled) {
-      alert("This event has been canceled");
-      return;
-    }
-    setIsJoined(!isJoined);
+  const handleRegistrationSubmit = () => {
+    setShowRegistrationForm(false);
+    // Here you would typically refresh the event data
   };
 
-  const handleCancelEvent = () => {
-    if (!canEdit) return;
-    // Here you would typically make an API call to update the event
-    // For now we'll just show an alert
-    alert("Event canceled");
-  };
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator
-        .share({
-          title: event.title,
-          text: `Check out this airsoft event: ${event.title}`,
-          url: window.location.href,
-        })
-        .catch((err) => console.error("Error sharing:", err));
-    } else {
-      alert("Share functionality is not supported on this browser");
-    }
+  const handleUpdateRegistrationStatus = (registrationId: string, status: 'accepted' | 'declined') => {
+    // Here you would typically make an API call to update the registration status
+    console.log('Updating registration', registrationId, 'to', status);
   };
 
   return (
@@ -113,22 +91,7 @@ const EventDetails: React.FC = () => {
               </h2>
             </div>
           )}
-          {canEdit && (
-            <div className="mb-4 flex justify-end space-x-2">
-              <button
-                onClick={() => setIsEditing(true)}
-                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-              >
-                Edit Event
-              </button>
-              <button
-                onClick={handleCancelEvent}
-                className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
-              >
-                {event.canceled ? "Reactivate Event" : "Cancel Event"}
-              </button>
-            </div>
-          )}
+          
           <div className="p-6 md:p-8">
             <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
               <div>
@@ -143,7 +106,15 @@ const EventDetails: React.FC = () => {
 
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={handleShare}
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: event.title,
+                        text: `Check out this airsoft event: ${event.title}`,
+                        url: window.location.href,
+                      });
+                    }
+                  }}
                   className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
                 >
                   <Share2 className="h-5 w-5 text-gray-700" />
@@ -190,14 +161,6 @@ const EventDetails: React.FC = () => {
                     </div>
 
                     <div className="flex items-start">
-                      <MapPin className="h-5 w-5 text-orange-500 mt-0.5 mr-3 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Type</p>
-                        <p className="text-gray-600">{event.field}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start">
                       <Users className="h-5 w-5 text-orange-500 mt-0.5 mr-3 flex-shrink-0" />
                       <div>
                         <p className="font-medium">Participants</p>
@@ -221,96 +184,69 @@ const EventDetails: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Host Information */}
-                <div>
-                  <h2 className="text-xl font-bold mb-4">About the Host</h2>
-                  <div className="flex items-start">
-                    <img
-                      src={event.team.logo}
-                      alt={event.team.name}
-                      className="w-16 h-16 rounded-full object-cover mr-4"
+                {/* Registrations List (for event owners) */}
+                {isEventOwner && (
+                  <div className="mb-8">
+                    <h2 className="text-xl font-bold mb-4">Registrations</h2>
+                    <EventRegistrationsList
+                      registrations={event.registrations}
+                      onUpdateStatus={handleUpdateRegistrationStatus}
                     />
-                    <div>
-                      <h3 className="font-bold text-lg">{event.team.name}</h3>
-                      <p className="text-gray-600 mb-2">
-                        {event.team.members.length} members
-                      </p>
-                      <p className="text-gray-700">{event.team.description}</p>
-                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* Registration Form */}
+                {showRegistrationForm && (
+                  <EventRegistrationForm
+                    eventId={event.id}
+                    onSubmit={handleRegistrationSubmit}
+                    onCancel={() => setShowRegistrationForm(false)}
+                  />
+                )}
               </div>
 
               <div>
                 {/* Action Card */}
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm sticky top-24">
                   <div className="mb-6">
-                    <button
-                      onClick={handleJoin}
-                      disabled={event.canceled}
-                      className={`w-full py-3 px-4 rounded-md font-bold ${
-                        isJoined
-                          ? "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                          : "bg-orange-500 text-white hover:bg-orange-600"
-                      } transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      {isJoined ? "Leave Event" : "Join Event"}
-                    </button>
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-6">
-                    <h3 className="font-bold mb-4">
-                      Participants ({event.participants.length})
-                    </h3>
-
-                    <div className="space-y-3 max-h-60 overflow-y-auto">
-                      {event.participants.map((participant) => (
-                        <div key={participant.id} className="flex items-center">
-                          <img
-                            src={participant.avatar}
-                            alt={participant.username}
-                            className="w-8 h-8 rounded-full object-cover mr-3"
-                          />
-                          <span className="text-gray-800">
-                            {participant.username}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {event.participants.length === 0 && (
-                      <p className="text-gray-500 text-center py-4">
-                        No participants yet
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-6 mt-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold">Questions?</h3>
-                      {authState.isAuthenticated && (
-                        <button className="text-orange-500 hover:text-orange-600 font-medium text-sm">
-                          Contact Host
-                        </button>
-                      )}
-                    </div>
-
-                    {!authState.isAuthenticated && (
-                      <Link
-                        to="/login"
-                        className="flex items-center justify-center space-x-1 w-full py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                    {userRegistration ? (
+                      <EventRegistrationStatus registration={userRegistration} />
+                    ) : (
+                      <button
+                        onClick={() => setShowRegistrationForm(true)}
+                        disabled={event.canceled || !authState.isAuthenticated}
+                        className="w-full py-3 px-4 rounded-md font-bold bg-orange-500 text-white hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <User className="h-4 w-4" />
-                        <span>Login to Contact Host</span>
-                      </Link>
-                    )}
-
-                    {authState.isAuthenticated && (
-                      <button className="flex items-center justify-center space-x-1 w-full py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition-colors duration-200">
-                        <MessageSquare className="h-4 w-4" />
-                        <span>Send Message</span>
+                        Join Event
                       </button>
                     )}
+                  </div>
+
+                  {!authState.isAuthenticated && (
+                    <div className="text-center text-sm text-gray-600">
+                      <Link to="/login" className="text-orange-500 hover:text-orange-600">
+                        Log in
+                      </Link>{" "}
+                      to join this event
+                    </div>
+                  )}
+
+                  <div className="border-t border-gray-200 pt-6">
+                    <h3 className="font-bold mb-4">About the Host</h3>
+                    <div className="flex items-start">
+                      <img
+                        src={event.team.logo}
+                        alt={event.team.name}
+                        className="w-16 h-16 rounded-full object-cover mr-4"
+                      />
+                      <div>
+                        <h3 className="font-bold text-lg">{event.team.name}</h3>
+                        <p className="text-gray-600 mb-2">
+                          {event.team.members.length} members
+                        </p>
+                        <p className="text-gray-700">{event.team.description}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -40,22 +40,19 @@ export interface Event {
   rules: string;
   maxParticipants: number;
   participants: User[];
+  registrations: EventRegistration[];
   createdAt: string;
   field: "Mato" | "CQB" | "Misto";
   canceled: boolean;
 }
 
-// Marketplace types
-export interface MarketplaceItem {
+export interface EventRegistration {
   id: string;
-  title: string;
-  description: string;
-  price: number;
-  condition: 'New' | 'Like New' | 'Good' | 'Fair' | 'Poor';
-  category: 'Guns' | 'Accessories' | 'Gear' | 'Clothing' | 'Other';
-  images: string[];
-  seller: User;
-  location: string;
+  eventId: string;
+  userId: string;
+  user: User;
+  status: 'pending' | 'accepted' | 'declined';
+  message: string;
+  proofImage: string;
   createdAt: string;
-  isTradeAllowed: boolean;
 }
