@@ -90,6 +90,23 @@ export const mockEvents: Event[] = [
     participants: [mockUsers[0], mockUsers[1]],
     createdAt: '2024-06-01T10:00:00Z',
     field: 'CQB'
+  },
+ {
+    id: 'event-2',
+    title: 'Urban Assault 2',
+    description: 'A fast-paced CQB operation in an abandoned factory complex. Multiple objectives and respawn points.',
+    location: 'Abandoned Factory, 123 Industrial St, Cityville',
+    date: '2025-08-15',
+    startTime: '09:00',
+    endTime: '17:00',
+    team: mockTeams[0],
+     canceled: true,
+    image: 'https://images.pexels.com/photos/5979962/pexels-photo-5979962.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+    rules: 'FPS limit: 350 for rifles, 400 for DMRs, 500 for bolt action. Eye protection mandatory. No blind firing.',
+    maxParticipants: 40,
+    participants: [mockUsers[0], mockUsers[1]],
+    createdAt: '2024-06-01T10:00:00Z',
+    field: 'CQB'
   }
 ];
 
