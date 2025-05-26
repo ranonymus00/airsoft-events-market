@@ -71,3 +71,5 @@ const EventRegistrationsList: React.FC<EventRegistrationsListProps> = ({
     </div>
   );
 };
+
+export default EventRegistrationsList
