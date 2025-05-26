@@ -91,3 +91,5 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
     </div>
   );
 };
+
+export default EventRegistrationForm

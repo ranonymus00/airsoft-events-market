@@ -42,3 +42,5 @@ const EventRegistrationStatus: React.FC<EventRegistrationStatusProps> = ({ regis
     </div>
   );
 };
+
+export default EventRegistrationStatus
