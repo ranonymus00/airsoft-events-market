@@ -100,7 +100,7 @@ export const mockEvents: Event[] = [
     startTime: '09:00',
     endTime: '17:00',
     team: mockTeams[0],
-     canceled: true,
+    canceled: true,
     image: 'https://images.pexels.com/photos/5979962/pexels-photo-5979962.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
     rules: 'FPS limit: 350 for rifles, 400 for DMRs, 500 for bolt action. Eye protection mandatory. No blind firing.',
     maxParticipants: 40,
