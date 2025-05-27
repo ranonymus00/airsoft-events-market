@@ -1,25 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Search, Filter, X, Trees, Building2, Map } from 'lucide-react';
 import EventCard from '../components/ui/EventCard';
 import AdSpace from '../components/ui/AdSpace';
-import { mockEvents } from '../data/mockData';
+import { api } from '../lib/api';
+import { Event } from '../types';
 
 const Events: React.FC = () => {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [fieldFilter, setFieldFilter] = useState<'Mato' | 'CQB' | 'Misto' | ''>('');
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  const loadEvents = async () => {
+    try {
+      const data = await api.events.getAll();
+      setEvents(data);
+    } catch (err) {
+      setError('Failed to load events');
+      console.error('Error loading events:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
   
-  const filteredEvents = mockEvents.filter(event => {
+  const filteredEvents = events.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          event.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          event.team.name.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesDate = dateFilter ? event.date === dateFilter : true;
-    const matchesField = fieldFilter ? event.field === fieldFilter : true;
+    const matchesField = fieldFilter ? event.field_type === fieldFilter : true;
     
     return matchesSearch && matchesDate && matchesField;
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button 
+            onClick={loadEvents}
+            className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const getFieldIcon = (field: 'Mato' | 'CQB' | 'Misto') => {
     switch (field) {

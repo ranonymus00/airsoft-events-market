@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   Calendar,
@@ -14,25 +14,48 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { format } from "date-fns";
-import { mockEvents } from "../data/mockData";
 import { useAuth } from "../contexts/AuthContext";
 import EventRegistrationForm from "../components/ui/EventRegistrationForm";
 import EventRegistrationStatus from "../components/ui/EventRegistrationStatus";
 import EventRegistrationsList from "../components/ui/EventRegistrationsList";
+import { api } from "../lib/api";
+import { Event } from "../types";
 
 const EventDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const event = mockEvents.find((event) => event.id === id);
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { authState } = useAuth();
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
 
-  const userRegistration = event?.registrations.find(
-    reg => reg.userId === authState.user?.id
-  );
+  useEffect(() => {
+    loadEvent();
+  }, [id]);
 
-  const isEventOwner = authState.user?.team?.id === event?.team.id;
+  const loadEvent = async () => {
+    if (!id) return;
+    
+    try {
+      const data = await api.events.getById(id);
+      setEvent(data);
+    } catch (err) {
+      setError('Failed to load event');
+      console.error('Error loading event:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (!event) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  if (error || !event) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <AlertTriangle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
@@ -51,14 +74,29 @@ const EventDetails: React.FC = () => {
     );
   }
 
-  const handleRegistrationSubmit = () => {
-    setShowRegistrationForm(false);
-    // Here you would typically refresh the event data
+  const userRegistration = event.registrations?.find(
+    reg => reg.user.id === authState.user?.id
+  );
+
+  const isEventOwner = authState.user?.team?.id === event.team.id;
+
+  const handleRegistrationSubmit = async (message: string, proofImage: string) => {
+    try {
+      await api.events.register(event.id, message, proofImage);
+      await loadEvent(); // Reload event data
+      setShowRegistrationForm(false);
+    } catch (err) {
+      console.error('Error submitting registration:', err);
+    }
   };
 
-  const handleUpdateRegistrationStatus = (registrationId: string, status: 'accepted' | 'declined') => {
-    // Here you would typically make an API call to update the registration status
-    console.log('Updating registration', registrationId, 'to', status);
+  const handleUpdateRegistrationStatus = async (registrationId: string, status: 'accepted' | 'declined') => {
+    try {
+      await api.events.updateRegistrationStatus(registrationId, status);
+      await loadEvent(); // Reload event data
+    } catch (err) {
+      console.error('Error updating registration status:', err);
+    }
   };
 
   return (
@@ -147,7 +185,7 @@ const EventDetails: React.FC = () => {
                       <div>
                         <p className="font-medium">Time</p>
                         <p className="text-gray-600">
-                          {event.startTime} - {event.endTime}
+                          {event.start_time} - {event.end_time}
                         </p>
                       </div>
                     </div>
@@ -165,7 +203,7 @@ const EventDetails: React.FC = () => {
                       <div>
                         <p className="font-medium">Participants</p>
                         <p className="text-gray-600">
-                          {event.participants.length} / {event.maxParticipants}
+                          {event.registrations.filter(r => r.status === 'accepted').length} / {event.max_participants}
                         </p>
                       </div>
                     </div>
