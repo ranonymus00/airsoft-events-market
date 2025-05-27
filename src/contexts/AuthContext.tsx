@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthState } from '../types';
-import { mockUsers } from '../data/mockData';
+import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   authState: AuthState;
@@ -27,38 +27,81 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   });
 
   useEffect(() => {
-    // Check if user is stored in localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    // Check current auth session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        fetchUser(session.user.id);
+      } else {
+        setAuthState(prev => ({ ...prev, loading: false }));
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        fetchUser(session.user.id);
+      } else {
+        setAuthState({
+          user: null,
+          isAuthenticated: false,
+          loading: false,
+        });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const fetchUser = async (userId: string) => {
+    try {
+      const { data: user, error } = await supabase
+        .from('users')
+        .select(`
+          *,
+          team:team_members(
+            team:teams(
+              id,
+              name,
+              description,
+              logo,
+              created_at
+            )
+          )
+        `)
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+
       setAuthState({
-        user: JSON.parse(storedUser),
+        user: {
+          ...user,
+          team: user.team?.[0]?.team || null,
+        },
         isAuthenticated: true,
         loading: false,
       });
-    } else {
+    } catch (error) {
+      console.error('Error fetching user:', error);
       setAuthState({
-        ...authState,
+        user: null,
+        isAuthenticated: false,
         loading: false,
       });
     }
-  }, []);
+  };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Simulate API call
-      // For demo purposes, we're using mock data
-      const user = mockUsers.find(user => user.email === email);
-      
-      if (user) {
-        localStorage.setItem('user', JSON.stringify(user));
-        setAuthState({
-          user,
-          isAuthenticated: true,
-          loading: false,
-        });
-        return true;
-      }
-      return false;
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      return true;
     } catch (error) {
       console.error('Login error:', error);
       return false;
@@ -67,22 +110,25 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
 
   const register = async (username: string, email: string, password: string): Promise<boolean> => {
     try {
-      // Simulate API call
-      const newUser: User = {
-        id: `user-${Date.now()}`,
-        username,
+      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email,
-        avatar: 'https://images.pexels.com/photos/1007066/pexels-photo-1007066.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-        teams: [],
-        createdAt: new Date().toISOString(),
-      };
-      
-      localStorage.setItem('user', JSON.stringify(newUser));
-      setAuthState({
-        user: newUser,
-        isAuthenticated: true,
-        loading: false,
+        password,
       });
+
+      if (signUpError) throw signUpError;
+      if (!user) throw new Error('No user returned after signup');
+
+      // Create user profile
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          username,
+          email,
+          avatar: `https://api.dicebear.com/7.x/avatars/svg?seed=${username}`,
+        });
+
+      if (profileError) throw profileError;
       return true;
     } catch (error) {
       console.error('Registration error:', error);
@@ -90,13 +136,12 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('user');
-    setAuthState({
-      user: null,
-      isAuthenticated: false,
-      loading: false,
-    });
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
