@@ -1,14 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, ShoppingBag, Users, ChevronRight } from 'lucide-react';
 import EventCard from '../components/ui/EventCard';
 import MarketplaceItemCard from '../components/ui/MarketplaceItemCard';
 import AdSpace from '../components/ui/AdSpace';
-import { mockEvents, mockMarketplaceItems } from '../data/mockData';
+import { api } from '../lib/api';
+import { Event, MarketplaceItem } from '../types';
 
 const Home: React.FC = () => {
-  const featuredEvents = mockEvents.slice(0, 3);
-  const featuredItems = mockMarketplaceItems.slice(0, 4);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [items, setItems] = useState<MarketplaceItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [eventsData, itemsData] = await Promise.all([
+          api.events.getAll(),
+          api.marketplace.getAll()
+        ]);
+        
+        setEvents(eventsData);
+        setItems(itemsData);
+      } catch (err) {
+        console.error('Error loading home data:', err);
+        setError('Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  const featuredEvents = events.slice(0, 3);
+  const featuredItems = items.slice(0, 4);
 
   return (
     <div className="flex flex-col">

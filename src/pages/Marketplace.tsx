@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShoppingBag, Search, Filter, X, ChevronDown } from 'lucide-react';
 import MarketplaceItemCard from '../components/ui/MarketplaceItemCard';
 import AdSpace from '../components/ui/AdSpace';
-import { mockMarketplaceItems } from '../data/mockData';
+import { api } from '../lib/api';
+import { MarketplaceItem } from '../types';
 
 const Marketplace: React.FC = () => {
+  const [items, setItems] = useState<MarketplaceItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('');
@@ -14,8 +18,24 @@ const Marketplace: React.FC = () => {
   
   const categories = ['Guns', 'Accessories', 'Gear', 'Clothing', 'Other'];
   const conditions = ['New', 'Like New', 'Good', 'Fair', 'Poor'];
+
+  useEffect(() => {
+    loadItems();
+  }, []);
+
+  const loadItems = async () => {
+    try {
+      const data = await api.marketplace.getAll();
+      setItems(data);
+    } catch (err) {
+      console.error('Error loading marketplace items:', err);
+      setError('Failed to load items');
+    } finally {
+      setLoading(false);
+    }
+  };
   
-  const filteredItems = mockMarketplaceItems.filter(item => {
+  const filteredItems = items.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.seller.username.toLowerCase().includes(searchTerm.toLowerCase());
@@ -24,10 +44,34 @@ const Marketplace: React.FC = () => {
     const matchesCondition = conditionFilter ? item.condition === conditionFilter : true;
     const matchesPrice = (priceRange.min === '' || item.price >= parseFloat(priceRange.min)) && 
                         (priceRange.max === '' || item.price <= parseFloat(priceRange.max));
-    const matchesTrade = tradeOnly ? item.isTradeAllowed : true;
+    const matchesTrade = tradeOnly ? item.is_trade_allowed : true;
     
     return matchesSearch && matchesCategory && matchesCondition && matchesPrice && matchesTrade;
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button 
+            onClick={loadItems}
+            className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen">

@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Upload, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { mockUsers } from '../data/mockData';
+import { api } from '../lib/api';
 import { User } from '../types';
 
 const CreateTeam: React.FC = () => {
   const { authState } = useAuth();
   const navigate = useNavigate();
   
+  const [users, setUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     location: '',
@@ -20,10 +21,31 @@ const CreateTeam: React.FC = () => {
   const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const { data: users } = await supabase
+          .from('users')
+          .select('*')
+          .neq('id', authState.user?.id);
+        
+        if (users) {
+          setUsers(users);
+        }
+      } catch (err) {
+        console.error('Error loading users:', err);
+      }
+    };
+
+    if (authState.user) {
+      loadUsers();
+    }
+  }, [authState.user]);
   
-  // Filter out the current user from potential members
-  const availableMembers = mockUsers.filter(
-    user => user.id !== authState.user?.id && !selectedMembers.includes(user)
+  // Filter out the current user and selected members from potential members
+  const availableMembers = users.filter(
+    user => !selectedMembers.includes(user)
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -54,13 +76,16 @@ const CreateTeam: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const team = await api.teams.create({
+        name: formData.name,
+        description: formData.description,
+        logo: formData.logo,
+      });
       
       // Navigate to success page or show success message
       navigate('/dashboard', { 
         state: { 
-          message: 'Your team request is under review by our admins. We\'ll notify you via email or in-app once it\'s approved.' 
+          message: 'Team created successfully! You can now start managing your team and organizing events.' 
         }
       });
     } catch (err) {
@@ -244,7 +269,8 @@ const CreateTeam: React.FC = () => {
                           />
                           <div className="text-left">
                             <p className="text-sm font-medium text-gray-800">{user.username}</p>
-                            <p className="text-xs text-gray-500">{user.email}</p>
+                            <p className="text-xs text-gray-500">{user.email}
+                            </p>
                           </div>
                         </button>
                       ))}
