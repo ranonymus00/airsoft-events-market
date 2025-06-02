@@ -1,0 +1,1 @@
+-- This migration is no longer needed as all schema changes are in the first migration
