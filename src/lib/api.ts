@@ -1,48 +1,22 @@
-import { supabase } from './supabase';
-import { Event, MarketplaceItem, Team, User } from '../types';
+import { supabase } from "./supabase";
+import { Team, Event } from "../types";
 
 export const api = {
   events: {
     async getAll() {
       const { data, error } = await supabase
-        .from('events')
-        .select(`
+        .from("events")
+        .select(
+          `
           *,
-          team:team_id(
+          user:users(
             id,
-            name,
-            description,
-            logo,
-            created_at
-          ),
-          registrations:event_registrations(
-            id,
-            status,
-            message,
-            proof_image,
-            created_at,
-            user:user_id(*)
-          )
-        `)
-        .order('date', { ascending: true });
-
-      if (error) throw error;
-      return data;
-    },
-
-    async getById(id: string) {
-      const { data, error } = await supabase
-        .from('events')
-        .select(`
-          *,
-          team:team_id(
-            id,
-            name,
-            description,
-            logo,
-            created_at,
-            members:team_members(
-              user:user_id(*)
+            username,
+            avatar,
+            team:teams(
+              id,
+              name,
+              logo
             )
           ),
           registrations:event_registrations(
@@ -51,10 +25,43 @@ export const api = {
             message,
             proof_image,
             created_at,
-            user:user_id(*)
+            user:users(*)
           )
-        `)
-        .eq('id', id)
+        `
+        )
+        .order("date", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+
+    async getById(id: string) {
+      const { data, error } = await supabase
+        .from("events")
+        .select(
+          `
+          *,
+          user:users(
+            id,
+            username,
+            avatar,
+            team:teams(
+              id,
+              name,
+              logo
+            )
+          ),
+          registrations:event_registrations(
+            id,
+            status,
+            message,
+            proof_image,
+            created_at,
+            user:users(*)
+          )
+        `
+        )
+        .eq("id", id)
         .single();
 
       if (error) throw error;
@@ -63,7 +70,7 @@ export const api = {
 
     async register(eventId: string, message: string, proofImage: string) {
       const { data, error } = await supabase
-        .from('event_registrations')
+        .from("event_registrations")
         .insert({
           event_id: eventId,
           message,
@@ -76,28 +83,73 @@ export const api = {
       return data;
     },
 
-    async updateRegistrationStatus(registrationId: string, status: 'accepted' | 'declined') {
+    async updateRegistrationStatus(
+      registrationId: string,
+      status: "accepted" | "declined"
+    ) {
       const { data, error } = await supabase
-        .from('event_registrations')
+        .from("event_registrations")
         .update({ status })
-        .eq('id', registrationId)
+        .eq("id", registrationId)
         .select()
         .single();
 
       if (error) throw error;
       return data;
-    }
+    },
+
+    async update(id: string, event: Partial<Event>) {
+      const { data, error } = await supabase
+        .from("events")
+        .update(event)
+        .eq("id", id)
+        .select(`
+          *,
+          user:users(
+            id,
+            username,
+            avatar,
+            team:teams(
+              id,
+              name,
+              logo
+            )
+          ),
+          registrations:event_registrations(
+            id,
+            status,
+            message,
+            proof_image,
+            created_at,
+            user:users(*)
+          )
+        `);
+
+      if (error) {
+        console.error("Error updating event:", error);
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        console.error("No data returned from update. Check RLS policies and user permissions.");
+        throw new Error("No event was updated. Please check if you have the correct permissions.");
+      }
+
+      return data[0];
+    },
   },
 
   marketplace: {
     async getAll() {
       const { data, error } = await supabase
-        .from('marketplace_items')
-        .select(`
+        .from("marketplace_items")
+        .select(
+          `
           *,
-          seller:seller_id(*)
-        `)
-        .order('created_at', { ascending: false });
+          seller:users(*)
+        `
+        )
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
@@ -105,27 +157,27 @@ export const api = {
 
     async getById(id: string) {
       const { data, error } = await supabase
-        .from('marketplace_items')
-        .select(`
+        .from("marketplace_items")
+        .select(
+          `
           *,
-          seller:seller_id(*)
-        `)
-        .eq('id', id)
+          seller:users(*)
+        `
+        )
+        .eq("id", id)
         .single();
 
       if (error) throw error;
       return data;
-    }
+    },
   },
 
   teams: {
     async getAll() {
-      const { data, error } = await supabase
-        .from('teams')
-        .select(`
+      const { data, error } = await supabase.from("teams").select(`
           *,
           members:team_members(
-            user:user_id(*)
+            user:users(*)
           )
         `);
 
@@ -135,13 +187,13 @@ export const api = {
 
     async create(team: Partial<Team>) {
       const { data, error } = await supabase
-        .from('teams')
+        .from("teams")
         .insert(team)
         .select()
         .single();
 
       if (error) throw error;
       return data;
-    }
-  }
+    },
+  },
 };

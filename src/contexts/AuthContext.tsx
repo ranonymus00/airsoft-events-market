@@ -1,12 +1,27 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, AuthState } from '../types';
-import { supabase } from '../lib/supabase';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { AuthState } from "../types";
+import { supabase } from "../lib/supabase";
 
 interface AuthContextType {
   authState: AuthState;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (username: string, email: string, password: string) => Promise<boolean>;
+  register: (
+    username: string,
+    email: string,
+    password: string
+  ) => Promise<boolean>;
   logout: () => void;
+  updateProfile: (data: {
+    username?: string;
+    email?: string;
+    avatar?: string;
+  }) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -14,12 +29,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
 
-export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
@@ -32,12 +49,14 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
       if (session) {
         fetchUser(session.user.id);
       } else {
-        setAuthState(prev => ({ ...prev, loading: false }));
+        setAuthState((prev) => ({ ...prev, loading: false }));
       }
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
         fetchUser(session.user.id);
       } else {
@@ -57,8 +76,9 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   const fetchUser = async (userId: string) => {
     try {
       const { data: user, error } = await supabase
-        .from('users')
-        .select(`
+        .from("users")
+        .select(
+          `
           *,
           team:team_members(
             team:teams(
@@ -69,8 +89,9 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
               created_at
             )
           )
-        `)
-        .eq('id', userId)
+        `
+        )
+        .eq("id", userId)
         .single();
 
       if (error) throw error;
@@ -84,7 +105,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         loading: false,
       });
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error("Error fetching user:", error);
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -95,7 +116,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -103,35 +124,45 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
       if (error) throw error;
       return true;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       return false;
     }
   };
 
-  const register = async (username: string, email: string, password: string): Promise<boolean> => {
+  const register = async (
+    username: string,
+    email: string,
+    password: string
+  ): Promise<boolean> => {
     try {
-      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+      const {
+        data: { user },
+        error: signUpError,
+      } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            username: username,
+          },
+        },
       });
 
       if (signUpError) throw signUpError;
-      if (!user) throw new Error('No user returned after signup');
+      if (!user) throw new Error("No user returned after signup");
 
       // Create user profile
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: user.id,
-          username,
-          email,
-          avatar: `https://api.dicebear.com/7.x/avatars/svg?seed=${username}`,
-        });
+      const { error: profileError } = await supabase.from("users").insert({
+        id: user.id,
+        username,
+        email,
+        avatar: `https://api.dicebear.com/9.x/adventurer/svg?seed=${username}`,
+      });
 
       if (profileError) throw profileError;
       return true;
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error("Registration error:", error);
       return false;
     }
   };
@@ -140,12 +171,39 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     try {
       await supabase.auth.signOut();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
+    }
+  };
+
+  const updateProfile = async (data: {
+    username?: string;
+    email?: string;
+    avatar?: string;
+  }): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update(data)
+        .eq("id", authState.user?.id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Update profile error:", error);
+      return false;
     }
   };
 
   return (
-    <AuthContext.Provider value={{ authState, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        authState,
+        login,
+        register,
+        logout,
+        updateProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

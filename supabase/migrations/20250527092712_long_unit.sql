@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS events (
   date date NOT NULL,
   start_time time NOT NULL,
   end_time time NOT NULL,
-  team_id uuid REFERENCES teams(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   image text,
   rules text,
   max_participants integer NOT NULL,
@@ -110,17 +110,23 @@ CREATE POLICY "Anyone can read events"
   TO authenticated
   USING (true);
 
-CREATE POLICY "Team members can update events"
+CREATE POLICY "Users can create events"
+  ON events
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Event owners can update their events"
   ON events
   FOR UPDATE
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM team_members
-      WHERE team_id = events.team_id
-      AND user_id = auth.uid()
-    )
-  );
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Event owners can delete their events"
+  ON events
+  FOR DELETE
+  TO authenticated
+  USING (auth.uid() = user_id);
 
 -- Event registrations table
 CREATE TABLE IF NOT EXISTS event_registrations (

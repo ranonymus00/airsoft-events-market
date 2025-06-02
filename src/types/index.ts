@@ -5,7 +5,7 @@ export interface User {
   email: string;
   avatar: string;
   team: Team | null;
-  createdAt: string;
+  created_at: string;
 }
 
 // Authentication types
@@ -33,17 +33,19 @@ export interface Event {
   description: string;
   location: string;
   date: string;
-  startTime: string;
-  endTime: string;
-  team: Team;
+  start_time: string;
+  end_time: string;
+  user_id: string;
+  user: User;
   image: string;
   rules: string;
-  maxParticipants: number;
+  max_participants: number;
   participants: User[];
   registrations: EventRegistration[];
-  createdAt: string;
+  created_at: string;
   field: "Mato" | "CQB" | "Misto";
   canceled: boolean;
+  deleted?: boolean;
 }
 
 export interface EventRegistration {
