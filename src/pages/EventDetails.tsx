@@ -127,7 +127,7 @@ const EventDetails: React.FC = () => {
   );
 
   const isEventOwner = authState.user?.id === event.user_id;
-  const isTeamMember = authState.user?.team?.id === event.user.team?.id;
+  const isTeamMember = authState.user?.team?.id === event.user?.team?.id;
 
   return (
     <div className="container mx-auto px-4 py-8">
