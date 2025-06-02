@@ -8,7 +8,7 @@ export const api = {
         .from('events')
         .select(`
           *,
-          team:teams(
+          team:team_id(
             id,
             name,
             description,
@@ -21,7 +21,7 @@ export const api = {
             message,
             proof_image,
             created_at,
-            user:users(*)
+            user:user_id(*)
           )
         `)
         .order('date', { ascending: true });
@@ -35,14 +35,14 @@ export const api = {
         .from('events')
         .select(`
           *,
-          team:teams(
+          team:team_id(
             id,
             name,
             description,
             logo,
             created_at,
             members:team_members(
-              user:users(*)
+              user:user_id(*)
             )
           ),
           registrations:event_registrations(
@@ -51,7 +51,7 @@ export const api = {
             message,
             proof_image,
             created_at,
-            user:users(*)
+            user:user_id(*)
           )
         `)
         .eq('id', id)
@@ -95,7 +95,7 @@ export const api = {
         .from('marketplace_items')
         .select(`
           *,
-          seller:users(*)
+          seller:seller_id(*)
         `)
         .order('created_at', { ascending: false });
 
@@ -108,7 +108,7 @@ export const api = {
         .from('marketplace_items')
         .select(`
           *,
-          seller:users(*)
+          seller:seller_id(*)
         `)
         .eq('id', id)
         .single();
@@ -125,7 +125,7 @@ export const api = {
         .select(`
           *,
           members:team_members(
-            user:users(*)
+            user:user_id(*)
           )
         `);
 
