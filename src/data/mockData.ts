@@ -101,7 +101,7 @@ export const mockEvents: Event[] = [
     participants: [mockUsers[0], mockUsers[1]],
     registrations: [],
     created_at: "2024-06-01T10:00:00Z",
-    field: "CQB",
+    field_type: "CQB",
   },
   {
     id: "event-2",
@@ -122,7 +122,7 @@ export const mockEvents: Event[] = [
     participants: [mockUsers[0], mockUsers[1]],
     registrations: [],
     created_at: "2024-06-01T10:00:00Z",
-    field: "CQB",
+    field_type: "CQB",
   },
 ];
 

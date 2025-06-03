@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { User, Lock, Mail, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import Button from "../components/ui/Button";
 
 const Register: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -197,13 +198,9 @@ const Register: React.FC = () => {
           </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-            >
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? "Creating account..." : "Create account"}
-            </button>
+            </Button>
           </div>
         </form>
 

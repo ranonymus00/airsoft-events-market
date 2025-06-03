@@ -32,6 +32,7 @@ export interface Event {
   title: string;
   description: string;
   location: string;
+  maps_link: string;
   date: string;
   start_time: string;
   end_time: string;
@@ -43,7 +44,7 @@ export interface Event {
   participants: User[];
   registrations: EventRegistration[];
   created_at: string;
-  field: "Mato" | "CQB" | "Misto";
+  field_type: "Mato" | "CQB" | "Misto";
   canceled: boolean;
   deleted?: boolean;
 }

@@ -25,7 +25,7 @@ const mockEvent: Event = {
   maxParticipants: 20,
   participants: [],
   created_at: '2024-03-15',
-  field: 'CQB'
+  field_type: 'CQB'
 };
 
 describe('EventCard', () => {

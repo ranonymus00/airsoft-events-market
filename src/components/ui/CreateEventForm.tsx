@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { Event } from "../../types";
+import Button from "./Button";
 
 interface CreateEventFormProps {
   onClose: () => void;
@@ -14,13 +15,14 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ onClose }) => {
     title: "",
     description: "",
     location: "",
+    maps_link: "",
     date: "",
     start_time: "",
     end_time: "",
     image: "",
     rules: "",
     max_participants: 20,
-    field: "Mato" as "Mato" | "CQB" | "Misto",
+    field_type: "Mato" as "Mato" | "CQB" | "Misto",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -104,11 +106,11 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ onClose }) => {
               Field Type
             </label>
             <select
-              value={formData.field}
+              value={formData.field_type}
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  field: e.target.value as "Mato" | "CQB" | "Misto",
+                  field_type: e.target.value as "Mato" | "CQB" | "Misto",
                 }))
               }
               className="w-full p-2 border border-gray-300 rounded-md"
@@ -167,6 +169,25 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ onClose }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
+            Google Maps Link
+          </label>
+          <input
+            type="url"
+            required
+            value={formData.maps_link}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, maps_link: e.target.value }))
+            }
+            className="w-full p-2 border border-gray-300 rounded-md"
+            placeholder="https://maps.google.com/..."
+          />
+          <p className="mt-1 text-sm text-gray-500">
+            Add a Google Maps link to help participants find the exact location
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
             Image URL
           </label>
           <input
@@ -215,19 +236,10 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ onClose }) => {
         </div>
 
         <div className="flex justify-end space-x-2 pt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
-          >
+          <Button variant="cancel" size="small" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
-          >
-            Create Event
-          </button>
+          </Button>
+          <Button type="submit" size="small">Create Event</Button>
         </div>
       </form>
     </div>

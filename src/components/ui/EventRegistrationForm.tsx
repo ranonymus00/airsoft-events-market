@@ -1,23 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Event } from "../../types";
+import Button from "./Button";
 
 interface EventFormData {
   title: string;
   description: string;
   image: string;
   location: string;
+  maps_link: string;
   date: string;
   start_time: string;
   end_time: string;
   rules: string;
   max_participants: number;
-  field: "Mato" | "CQB" | "Misto";
+  field_type: "Mato" | "CQB" | "Misto";
 }
 
 interface EventRegistrationFormProps {
   onSubmit:
-    | ((message: string, proofImage: string, numberOfParticipants: number) => void)
+    | ((
+        message: string,
+        proofImage: string,
+        numberOfParticipants: number
+      ) => void)
     | ((formData: EventFormData) => void);
   onCancel: () => void;
   mode?: "create" | "edit";
@@ -31,18 +37,23 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
   event,
 }) => {
   const [formData, setFormData] = useState<
-    EventFormData & { message: string; proofImage: string; numberOfParticipants: number }
+    EventFormData & {
+      message: string;
+      proofImage: string;
+      numberOfParticipants: number;
+    }
   >({
     title: "",
     description: "",
     location: "",
+    maps_link: "",
     date: "",
     start_time: "",
     end_time: "",
     image: "",
     rules: "",
     max_participants: 20,
-    field: "Mato",
+    field_type: "Mato",
     message: "",
     proofImage: "",
     numberOfParticipants: 1,
@@ -69,11 +80,13 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
 
     try {
       if (mode === "create") {
-        (onSubmit as (message: string, proofImage: string, numberOfParticipants: number) => void)(
-          formData.message,
-          formData.proofImage,
-          formData.numberOfParticipants
-        );
+        (
+          onSubmit as (
+            message: string,
+            proofImage: string,
+            numberOfParticipants: number
+          ) => void
+        )(formData.message, formData.proofImage, formData.numberOfParticipants);
       } else {
         (onSubmit as (formData: EventFormData) => void)(formData);
       }
@@ -148,11 +161,11 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
                     Field Type
                   </label>
                   <select
-                    value={formData.field}
+                    value={formData.field_type}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        field: e.target.value as "Mato" | "CQB" | "Misto",
+                        field_type: e.target.value as "Mato" | "CQB" | "Misto",
                       }))
                     }
                     className="w-full p-2 border border-gray-300 rounded-md"
@@ -216,6 +229,28 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
                   }
                   className="w-full p-2 border border-gray-300 rounded-md"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Google Maps Link
+                </label>
+                <input
+                  type="url"
+                  required
+                  value={formData.maps_link}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      maps_link: e.target.value,
+                    }))
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="https://maps.google.com/..."
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Add a Google Maps link to help participants find the exact location
+                </p>
               </div>
 
               <div>
@@ -342,25 +377,21 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
           )}
 
           <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            <Button
+              variant="cancel"
+              size="small"
               disabled={isSubmitting}
+              onClick={onCancel}
             >
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50"
-              disabled={isSubmitting}
-            >
+            </Button>
+            <Button size="small" disabled={isSubmitting} type="submit">
               {isSubmitting
                 ? "Submitting..."
                 : mode === "create"
                 ? "Submit Registration"
                 : "Save Changes"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

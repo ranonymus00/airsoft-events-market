@@ -1,4 +1,5 @@
 import { CheckCircle, Clock, XCircle } from "lucide-react";
+import { EventRegistration } from "../types";
 
 export const getStatusDisplay = (status: string) => {
   switch (status) {
@@ -24,4 +25,16 @@ export const getStatusDisplay = (status: string) => {
         textColor: "text-yellow-700",
       };
   }
+};
+
+export const getParticipants = (
+  registrations: EventRegistration[],
+  max_participants: number
+) => {
+  return `${registrations
+    ?.filter((registration) => registration.status === "accepted")
+    .reduce(
+      (sum, reg) => sum + (reg.number_of_participants || 1),
+      0
+    )} / ${max_participants} participants`;
 };

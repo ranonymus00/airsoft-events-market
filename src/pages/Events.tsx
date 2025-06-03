@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
-import {
-  Calendar,
-  Search,
-  Filter,
-  X,
-} from "lucide-react";
+import { Calendar, Search, Filter, X } from "lucide-react";
 import EventCard from "../components/ui/EventCard";
 import AdSpace from "../components/ui/AdSpace";
 import { api } from "../lib/api";
 import { Event } from "../types";
+import Button from "../components/ui/Button";
 
 const Events: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -44,7 +40,7 @@ const Events: React.FC = () => {
       event.user?.team?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesDate = dateFilter ? event.date === dateFilter : true;
-    const matchesField = fieldFilter ? event.field === fieldFilter : true;
+    const matchesField = fieldFilter ? event.field_type === fieldFilter : true;
 
     return matchesSearch && matchesDate && matchesField;
   });
@@ -62,12 +58,7 @@ const Events: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 mb-4">{error}</p>
-          <button
-            onClick={loadEvents}
-            className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600"
-          >
-            Try Again
-          </button>
+          <Button onClick={loadEvents}>Try Again</Button>
         </div>
       </div>
     );
@@ -108,13 +99,13 @@ const Events: React.FC = () => {
               />
             </div>
 
-            <button
+            <Button
+              variant="secondary"
+              leftIcon={<Filter className="h-5 w-5" />}
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center justify-center space-x-2 bg-slate-700 text-white py-3 px-4 rounded-md hover:bg-slate-600 transition-colors duration-200"
             >
-              <Filter className="h-5 w-5" />
-              <span>Filters</span>
-            </button>
+              Filters
+            </Button>
           </div>
 
           {showFilters && (
@@ -185,7 +176,7 @@ const Events: React.FC = () => {
         {/* Events Grid with Side Ad */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}

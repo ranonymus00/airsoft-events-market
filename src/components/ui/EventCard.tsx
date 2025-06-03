@@ -1,33 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  Users,
-  Trees,
-  Building2,
-  Map,
-} from "lucide-react";
+import { Calendar, MapPin, Clock, Users } from "lucide-react";
 import { Event } from "../../types";
 import { format } from "date-fns";
+import Button from "./Button";
+import { getParticipants } from "../../utils/events";
 
 interface EventCardProps {
   event: Event;
 }
 
 const EventCard: React.FC<EventCardProps> = ({ event }) => {
-  const getFieldIcon = () => {
-    switch (event.field) {
-      case "Mato":
-        return <Trees className="h-4 w-4 mr-2 text-orange-500" />;
-      case "CQB":
-        return <Building2 className="h-4 w-4 mr-2 text-orange-500" />;
-      case "Misto":
-        return <Map className="h-4 w-4 mr-2 text-orange-500" />;
-    }
-  };
-
   // Get the host name with fallback values
   const getHostName = () => {
     if (event.user?.team?.name) {
@@ -63,9 +46,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
           <h3 className="text-white text-xl font-bold truncate">
             {event.title}
           </h3>
-          <p className="text-white/90 text-sm">
-            Hosted by {getHostName()}
-          </p>
+          <p className="text-white/90 text-sm">Hosted by {getHostName()}</p>
         </div>
       </div>
 
@@ -86,30 +67,22 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
 
         <div className="flex items-center text-gray-600">
           <MapPin className="h-4 w-4 mr-2 text-orange-500" />
-          <span className="text-sm truncate">{event.location}</span>
+          <span className="text-sm truncate">
+            {event.field_type} - {event.location}
+          </span>
         </div>
 
         <div className="flex items-center text-gray-600">
           <Users className="h-4 w-4 mr-2 text-orange-500" />
           <span className="text-sm">
-            {
-              event?.registrations?.filter(
-                (registration) => registration.status === "accepted"
-              ).reduce((sum, reg) => sum + (reg.number_of_participants || 1), 0)
-            }{" "}
-            / {event?.max_participants} participants
+            {getParticipants(event.registrations, event.max_participants)}
           </span>
         </div>
 
-        <div className="flex items-center text-gray-600">
-          {getFieldIcon()}
-          <span className="text-sm">{event.field}</span>
-        </div>
-
         <div className="mt-4 pt-4 border-t border-gray-100">
-          <div className="bg-orange-500 text-white py-2 px-4 rounded-md text-center text-sm font-medium hover:bg-orange-600 transition-colors duration-200">
+          <Button size="small" className="w-full">
             View Details
-          </div>
+          </Button>
         </div>
       </div>
     </Link>

@@ -16,18 +16,22 @@ import EventRegistrationStatus from "../components/ui/EventRegistrationStatus";
 import EventRegistrationsList from "../components/ui/EventRegistrationsList";
 import { api } from "../lib/api";
 import { Event } from "../types";
+import Button from "../components/ui/Button";
+import { getParticipants } from "../utils/events";
+import AdSpace from "../components/ui/AdSpace";
 
 interface EventFormData {
   title: string;
   description: string;
   image: string;
   location: string;
+  maps_link: string;
   date: string;
   start_time: string;
   end_time: string;
   rules: string;
   max_participants: number;
-  field: "Mato" | "CQB" | "Misto";
+  field_type: "Mato" | "CQB" | "Misto";
 }
 
 const EventDetails: React.FC = () => {
@@ -67,12 +71,13 @@ const EventDetails: React.FC = () => {
         description: formData.description,
         image: formData.image,
         location: formData.location,
+        maps_link: formData.maps_link,
         date: formData.date,
         start_time: formData.start_time,
         end_time: formData.end_time,
         rules: formData.rules,
         max_participants: formData.max_participants,
-        field_type: formData.field,
+        field_type: formData.field_type,
       };
 
       const data = await api.events.update(event.id, updatedEvent);
@@ -92,7 +97,12 @@ const EventDetails: React.FC = () => {
     if (!event) return;
 
     try {
-      await api.events.register(event.id, message, proofImage, numberOfParticipants);
+      await api.events.register(
+        event.id,
+        message,
+        proofImage,
+        numberOfParticipants
+      );
       await loadEvent();
       setShowRegistrationForm(false);
     } catch (err) {
@@ -183,98 +193,125 @@ const EventDetails: React.FC = () => {
             </div>
           )}
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3">
+            <div className="p-6">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                    {event.title}
+                  </h1>
+                  <div className="text-gray-600 mb-4">
+                    <span className="flex items-center">
+                      <User className="h-5 w-5 mr-1" />
+                      Hosted by {event.user?.team?.name || event.user?.username}
+                    </span>
+                    <span className="text-sm">
+                      {getParticipants(
+                        event.registrations,
+                        event.max_participants
+                      )}
+                    </span>
+                  </div>
+                </div>
 
-        <div className="p-6">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                {event.title}
-              </h1>
-              <div className="text-gray-600 mb-4">
-                <span className="flex items-center">
-                  <User className="h-5 w-5 mr-1" />
-                  Hosted by {event.user?.team?.name || event.user?.username}
-                </span>
-                <span className="text-sm">
-                  {
-                    event?.registrations?.filter(
-                      (registration) => registration.status === "accepted"
-                    ).reduce((sum, reg) => sum + (reg.number_of_participants || 1), 0)
-                  }{" "}
-                  / {event?.max_participants} participants
-                </span>
+                <div className="flex space-x-2">
+                  <button className="p-2 text-gray-500 hover:text-gray-700">
+                    <Share2 className="h-5 w-5" />
+                  </button>
+                  {isEventOwner && (
+                    <button
+                      onClick={() => setShowEditForm(true)}
+                      className="p-2 text-blue-500 hover:text-blue-700"
+                    >
+                      <Edit className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="flex items-center text-gray-600">
+                  <Calendar className="h-5 w-5 mr-2 text-orange-500" />
+                  <span>{new Date(event.date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <Clock className="h-5 w-5 mr-2 text-orange-500" />
+                  <span>
+                    {event.start_time} - {event.end_time}
+                  </span>
+                </div>
+                {event.maps_link ? (
+                  <a
+                    href={event.maps_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2"
+                  >
+                    <span className="flex items-center text-gray-600 hover:text-orange-500">
+                      <MapPin className="h-5 w-5 mr-2 text-orange-500" />
+                      <span>{event.location}</span>
+                    </span>
+                  </a>
+                ) : (
+                  <span className="flex items-center text-gray-600">
+                    <MapPin className="h-5 w-5 mr-2 text-orange-500" />
+                    <span>{event.location}</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="prose max-w-none mb-8">
+                <h2 className="text-xl font-bold mb-2">Description</h2>
+                <p className="text-gray-600">{event.description}</p>
+              </div>
+
+              <div className="prose max-w-none mb-8">
+                <h2 className="text-xl font-bold mb-2">Rules</h2>
+                <p className="text-gray-600">{event.rules}</p>
+              </div>
+
+              <div className="border-t border-gray-100 pt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold">Registrations</h2>
+                </div>
+
+                {userRegistration && (
+                  <div className="mb-4">
+                    <EventRegistrationStatus registration={userRegistration} />
+                  </div>
+                )}
+
+                {canRegister && (
+                  <Button
+                    onClick={() => setShowRegistrationForm(true)}
+                    className="w-full"
+                  >
+                    Join Event
+                  </Button>
+                )}
+
+                <EventRegistrationsList
+                  registrations={event.registrations}
+                  onUpdateStatus={handleUpdateRegistrationStatus}
+                  isEventOwner={isEventOwner}
+                />
               </div>
             </div>
-
-            <div className="flex space-x-2">
-              <button className="p-2 text-gray-500 hover:text-gray-700">
-                <Share2 className="h-5 w-5" />
-              </button>
-              {isEventOwner && (
-                <button
-                  onClick={() => setShowEditForm(true)}
-                  className="p-2 text-blue-500 hover:text-blue-700"
-                >
-                  <Edit className="h-5 w-5" />
-                </button>
-              )}
-            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="flex items-center text-gray-600">
-              <Calendar className="h-5 w-5 mr-2 text-orange-500" />
-              <span>{new Date(event.date).toLocaleDateString()}</span>
-            </div>
-            <div className="flex items-center text-gray-600">
-              <Clock className="h-5 w-5 mr-2 text-orange-500" />
-              <span>
-                {event.start_time} - {event.end_time}
-              </span>
-            </div>
-            <div className="flex items-center text-gray-600">
-              <MapPin className="h-5 w-5 mr-2 text-orange-500" />
-              <span>{event.location}</span>
-            </div>
-          </div>
-
-          <div className="prose max-w-none mb-8">
-            <h2 className="text-xl font-bold mb-2">Description</h2>
-            <p className="text-gray-600">{event.description}</p>
-          </div>
-
-          <div className="prose max-w-none mb-8">
-            <h2 className="text-xl font-bold mb-2">Rules</h2>
-            <p className="text-gray-600">{event.rules}</p>
-          </div>
-
-          <div className="border-t border-gray-100 pt-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Registrations</h2>
-            </div>
-
-            {userRegistration && (
-              <div className="mb-4">
-                <EventRegistrationStatus registration={userRegistration} />
-              </div>
-            )}
-
-            {canRegister && (
-              <button
-                onClick={() => setShowRegistrationForm(true)}
-                className="w-full py-3 px-4 rounded-md font-bold bg-orange-500 text-white hover:bg-orange-600 transition-colors duration-200"
-              >
-                Join Event
-              </button>
-            )}
-
-            <EventRegistrationsList
-              registrations={event.registrations}
-              onUpdateStatus={handleUpdateRegistrationStatus}
-              isEventOwner={isEventOwner}
+          <div className="lg:col-span-1">
+            <AdSpace
+              width="100%"
+              height="600px"
+              className="rounded-lg sticky top-24"
             />
           </div>
         </div>
+      </div>
+
+      <div className="pt-6">
+        <AdSpace width="100%" height="90px" className="rounded-lg" />
       </div>
 
       {showRegistrationForm && (
