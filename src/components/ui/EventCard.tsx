@@ -28,6 +28,17 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
     }
   };
 
+  // Get the host name with fallback values
+  const getHostName = () => {
+    if (event.user?.team?.name) {
+      return event.user.team.name;
+    }
+    if (event.user?.username) {
+      return event.user.username;
+    }
+    return "Unknown Host";
+  };
+
   return (
     <Link
       to={`/events/${event.id}`}
@@ -53,7 +64,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
             {event.title}
           </h3>
           <p className="text-white/90 text-sm">
-            Hosted by {event.user?.username || event.user?.team?.name}
+            Hosted by {getHostName()}
           </p>
         </div>
       </div>
