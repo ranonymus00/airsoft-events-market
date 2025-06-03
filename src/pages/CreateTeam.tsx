@@ -1,17 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, Upload, AlertCircle } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
 import { api } from "../lib/api";
-import { User } from "../types";
 import Button from "../components/ui/Button";
-import { supabase } from "../lib/supabase";
 
 const CreateTeam: React.FC = () => {
-  const { authState } = useAuth();
   const navigate = useNavigate();
 
-  const [users, setUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     location: "",
@@ -20,35 +15,8 @@ const CreateTeam: React.FC = () => {
     logo: "",
   });
 
-  const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const { data: users } = await supabase
-          .from("users")
-          .select("*")
-          .neq("id", authState.user?.id);
-
-        if (users) {
-          setUsers(users);
-        }
-      } catch (err) {
-        console.error("Error loading users:", err);
-      }
-    };
-
-    if (authState.user) {
-      loadUsers();
-    }
-  }, [authState.user]);
-
-  // Filter out the current user and selected members from potential members
-  const availableMembers = users.filter(
-    (user) => !selectedMembers.includes(user)
-  );
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -62,13 +30,6 @@ const CreateTeam: React.FC = () => {
     }));
   };
 
-  const handleMemberAdd = (user: User) => {
-    setSelectedMembers((prev) => [...prev, user]);
-  };
-
-  const handleMemberRemove = (userId: string) => {
-    setSelectedMembers((prev) => prev.filter((member) => member.id !== userId));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +43,7 @@ const CreateTeam: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const team = await api.teams.create({
+      await api.teams.create({
         name: formData.name,
         description: formData.description,
         logo: formData.logo,
@@ -226,74 +187,6 @@ const CreateTeam: React.FC = () => {
                     <option value="milsim">Milsim</option>
                     <option value="speedsoft">Speedsoft</option>
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Team Members
-                  </label>
-
-                  {/* Selected Members */}
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-600 mb-2">
-                      Selected Members:
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedMembers.map((member) => (
-                        <div
-                          key={member.id}
-                          className="flex items-center bg-gray-100 rounded-full pl-2 pr-3 py-1"
-                        >
-                          <img
-                            src={member.avatar}
-                            alt={member.username}
-                            className="w-6 h-6 rounded-full mr-2"
-                          />
-                          <span className="text-sm text-gray-800">
-                            {member.username}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleMemberRemove(member.id)}
-                            className="ml-2 text-gray-500 hover:text-red-500"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Available Members */}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-600 mb-2">
-                      Add Members:
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {availableMembers.map((user) => (
-                        <button
-                          key={user.id}
-                          type="button"
-                          onClick={() => handleMemberAdd(user)}
-                          className="flex items-center space-x-2 p-2 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-200"
-                        >
-                          <img
-                            src={user.avatar}
-                            alt={user.username}
-                            className="w-8 h-8 rounded-full"
-                          />
-                          <div className="text-left">
-                            <p className="text-sm font-medium text-gray-800">
-                              {user.username}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {user.email}
-                            </p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </div>
 
