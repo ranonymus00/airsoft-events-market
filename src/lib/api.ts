@@ -9,7 +9,7 @@ export const api = {
         .select(
           `
           *,
-          user:users(
+          user:users!events_user_id_fkey(
             id,
             username,
             avatar,
@@ -19,13 +19,23 @@ export const api = {
               logo
             )
           ),
-          registrations:event_registrations(
+          registrations:event_registrations!event_registrations_event_id_fkey(
             id,
             status,
             message,
             proof_image,
             created_at,
-            user:users(*)
+            number_of_participants,
+            user:users!event_registrations_user_id_fkey(
+              id,
+              username,
+              avatar,
+              team:teams(
+                id,
+                name,
+                logo
+              )
+            )
           )
         `
         )
@@ -41,7 +51,7 @@ export const api = {
         .select(
           `
           *,
-          user:users(
+          user:users!events_user_id_fkey(
             id,
             username,
             avatar,
@@ -51,13 +61,23 @@ export const api = {
               logo
             )
           ),
-          registrations:event_registrations(
+          registrations:event_registrations!event_registrations_event_id_fkey(
             id,
             status,
             message,
             proof_image,
             created_at,
-            user:users(*)
+            number_of_participants,
+            user:users!event_registrations_user_id_fkey(
+              id,
+              username,
+              avatar,
+              team:teams(
+                id,
+                name,
+                logo
+              )
+            )
           )
         `
         )
@@ -68,15 +88,41 @@ export const api = {
       return data;
     },
 
-    async register(eventId: string, message: string, proofImage: string) {
+    async register(eventId: string, message: string, proofImage: string, numberOfParticipants: number = 1) {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User must be authenticated to register for an event');
+      }
+
       const { data, error } = await supabase
         .from("event_registrations")
         .insert({
           event_id: eventId,
+          user_id: user.id,
           message,
           proof_image: proofImage,
+          number_of_participants: numberOfParticipants,
+          status: 'pending'
         })
-        .select()
+        .select(`
+          id,
+          status,
+          message,
+          proof_image,
+          number_of_participants,
+          created_at,
+          user:users!event_registrations_user_id_fkey(
+            id,
+            username,
+            avatar,
+            team:teams(
+              id,
+              name,
+              logo
+            )
+          )
+        `)
         .single();
 
       if (error) throw error;
@@ -105,7 +151,7 @@ export const api = {
         .eq("id", id)
         .select(`
           *,
-          user:users(
+          user:users!events_user_id_fkey(
             id,
             username,
             avatar,
@@ -131,8 +177,12 @@ export const api = {
       }
 
       if (!data || data.length === 0) {
-        console.error("No data returned from update. Check RLS policies and user permissions.");
-        throw new Error("No event was updated. Please check if you have the correct permissions.");
+        console.error(
+          "No data returned from update. Check RLS policies and user permissions."
+        );
+        throw new Error(
+          "No event was updated. Please check if you have the correct permissions."
+        );
       }
 
       return data[0];

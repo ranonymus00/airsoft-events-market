@@ -59,7 +59,7 @@ const Dashboard: React.FC = () => {
   const [showCreateEventForm, setShowCreateEventForm] = useState(false);
   const [showEditEventForm, setShowEditEventForm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  
+
   // State for data from API
   const [userEvents, setUserEvents] = useState<Event[]>([]);
   const [userItems, setUserItems] = useState<MarketplaceItem[]>([]);
@@ -67,7 +67,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState({
     events: true,
     items: true,
-    teams: true
+    teams: true,
   });
 
   // Initialize edited profile when auth state changes
@@ -83,19 +83,18 @@ const Dashboard: React.FC = () => {
   // Load user's events
   const loadUserEvents = async () => {
     if (!authState.user?.id) return;
-    
+
     try {
       const events = await api.events.getAll();
       // Filter events where user is a participant or owner
-      const filteredEvents = events.filter(event => 
-        event.user_id === authState.user?.id || 
-        event.registrations?.some((reg: { user: { id: string } }) => reg.user.id === authState.user?.id)
+      const filteredEvents = events.filter(
+        (event) => event.user_id === authState.user?.id
       );
       setUserEvents(filteredEvents);
     } catch (err) {
-      console.error('Error loading events:', err);
+      console.error("Error loading events:", err);
     } finally {
-      setLoading(prev => ({ ...prev, events: false }));
+      setLoading((prev) => ({ ...prev, events: false }));
     }
   };
 
@@ -107,15 +106,17 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const loadUserItems = async () => {
       if (!authState.user?.id) return;
-      
+
       try {
         const items = await api.marketplace.getAll();
-        const filteredItems = items.filter(item => item.seller.id === authState.user?.id);
+        const filteredItems = items.filter(
+          (item) => item.seller.id === authState.user?.id
+        );
         setUserItems(filteredItems);
       } catch (err) {
-        console.error('Error loading marketplace items:', err);
+        console.error("Error loading marketplace items:", err);
       } finally {
-        setLoading(prev => ({ ...prev, items: false }));
+        setLoading((prev) => ({ ...prev, items: false }));
       }
     };
 
@@ -129,9 +130,9 @@ const Dashboard: React.FC = () => {
         const teams = await api.teams.getAll();
         setTeams(teams);
       } catch (err) {
-        console.error('Error loading teams:', err);
+        console.error("Error loading teams:", err);
       } finally {
-        setLoading(prev => ({ ...prev, teams: false }));
+        setLoading((prev) => ({ ...prev, teams: false }));
       }
     };
 
@@ -213,8 +214,8 @@ const Dashboard: React.FC = () => {
     if (!selectedEvent || !authState.user) return;
 
     try {
-      console.log('Current user:', authState.user); // Debug log
-      console.log('Selected event:', selectedEvent); // Debug log
+      console.log("Current user:", authState.user); // Debug log
+      console.log("Selected event:", selectedEvent); // Debug log
 
       const updatedEvent = {
         title: formData.title,
@@ -227,10 +228,10 @@ const Dashboard: React.FC = () => {
         rules: formData.rules,
         max_participants: formData.max_participants,
         field_type: formData.field,
-        user_id: authState.user.id // Make sure this matches the event owner
+        user_id: authState.user.id, // Make sure this matches the event owner
       };
 
-      console.log('Sending update with data:', updatedEvent); // Debug log
+      console.log("Sending update with data:", updatedEvent); // Debug log
 
       await api.events.update(selectedEvent.id, updatedEvent);
       await loadUserEvents(); // Reload events data
@@ -638,18 +639,20 @@ const Dashboard: React.FC = () => {
                                   {event.title}
                                 </h3>
                                 <p className="text-gray-500 text-sm">
-                                  Team: {event.user.username || event.user.team?.name}
+                                  Team:{" "}
+                                  {event.user?.username ||
+                                    event.user?.team?.name}
                                 </p>
                               </div>
 
                               <div className="flex space-x-2">
-                                <button 
+                                <button
                                   onClick={() => handleEditEvent(event)}
                                   className="p-2 text-blue-500 hover:bg-blue-50 rounded-md transition-colors duration-200"
                                 >
                                   <Edit className="h-5 w-5" />
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => handleDeleteEvent(event.id)}
                                   className="p-2 text-red-500 hover:bg-red-50 rounded-md transition-colors duration-200"
                                 >
@@ -669,8 +672,13 @@ const Dashboard: React.FC = () => {
                               <div className="flex items-center text-gray-600">
                                 <User className="h-4 w-4 mr-1 text-orange-500" />
                                 <span>
-                                  {event.registrations?.length || 0} /{" "}
-                                  {event.max_participants}
+                                  {
+                                    event?.registrations?.filter(
+                                      (registration) =>
+                                        registration.status === "accepted"
+                                    ).length
+                                  }{" "}
+                                  / {event.max_participants}
                                 </span>
                               </div>
                             </div>
@@ -768,7 +776,9 @@ const Dashboard: React.FC = () => {
 
                             <div className="mt-3 flex justify-end">
                               <button
-                                onClick={() => navigate(`/marketplace/${item.id}`)}
+                                onClick={() =>
+                                  navigate(`/marketplace/${item.id}`)
+                                }
                                 className="text-orange-500 hover:text-orange-600 font-medium text-sm"
                               >
                                 View listing

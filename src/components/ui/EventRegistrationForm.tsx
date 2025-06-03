@@ -17,7 +17,7 @@ interface EventFormData {
 
 interface EventRegistrationFormProps {
   onSubmit:
-    | ((message: string, proofImage: string) => void)
+    | ((message: string, proofImage: string, numberOfParticipants: number) => void)
     | ((formData: EventFormData) => void);
   onCancel: () => void;
   mode?: "create" | "edit";
@@ -31,7 +31,7 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
   event,
 }) => {
   const [formData, setFormData] = useState<
-    EventFormData & { message: string; proofImage: string }
+    EventFormData & { message: string; proofImage: string; numberOfParticipants: number }
   >({
     title: "",
     description: "",
@@ -45,6 +45,7 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
     field: "Mato",
     message: "",
     proofImage: "",
+    numberOfParticipants: 1,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { authState } = useAuth();
@@ -55,6 +56,7 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
         ...event,
         message: "",
         proofImage: "",
+        numberOfParticipants: 1,
       });
     }
   }, [mode, event]);
@@ -67,9 +69,10 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
 
     try {
       if (mode === "create") {
-        (onSubmit as (message: string, proofImage: string) => void)(
+        (onSubmit as (message: string, proofImage: string, numberOfParticipants: number) => void)(
           formData.message,
-          formData.proofImage
+          formData.proofImage,
+          formData.numberOfParticipants
         );
       } else {
         (onSubmit as (formData: EventFormData) => void)(formData);
@@ -268,6 +271,29 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
 
           {mode === "create" && (
             <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Number of Participants
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max={event?.max_participants}
+                  value={formData.numberOfParticipants}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      numberOfParticipants: parseInt(e.target.value),
+                    }))
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  required
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  How many people are you registering for this event?
+                </p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Message to Organizer

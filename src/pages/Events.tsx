@@ -41,7 +41,7 @@ const Events: React.FC = () => {
     const matchesSearch =
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.user.team?.name.toLowerCase().includes(searchTerm.toLowerCase());
+      event.user?.team?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesDate = dateFilter ? event.date === dateFilter : true;
     const matchesField = fieldFilter ? event.field === fieldFilter : true;

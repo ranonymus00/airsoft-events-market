@@ -18,13 +18,13 @@ const mockEvent: Event = {
     logo: 'test-logo.jpg',
     members: [],
     events: [],
-    createdAt: '2024-03-15',
+    created_at: '2024-03-15',
   },
   image: 'test-image.jpg',
   rules: 'Test rules',
   maxParticipants: 20,
   participants: [],
-  createdAt: '2024-03-15',
+  created_at: '2024-03-15',
   field: 'CQB'
 };
 

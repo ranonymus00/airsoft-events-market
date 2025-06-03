@@ -9,7 +9,7 @@ interface MarketplaceItemCardProps {
 }
 
 const MarketplaceItemCard: React.FC<MarketplaceItemCardProps> = ({ item }) => {
-  const timeAgo = formatDistance(new Date(item.createdAt), new Date(), { addSuffix: true });
+  const timeAgo = formatDistance(new Date(item.created_at), new Date(), { addSuffix: true });
   
   return (
     <Link 

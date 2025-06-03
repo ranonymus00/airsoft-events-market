@@ -44,6 +44,7 @@
       - `status` (text)
       - `message` (text)
       - `proof_image` (text)
+      - `number_of_participants` (integer)
       - `created_at` (timestamp)
     
     - `marketplace_items`
@@ -187,6 +188,7 @@ CREATE TABLE event_registrations (
   status text DEFAULT 'pending',
   message text,
   proof_image text,
+  number_of_participants integer DEFAULT 1,
   created_at timestamptz DEFAULT now()
 );
 

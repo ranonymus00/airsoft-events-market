@@ -23,7 +23,7 @@ export interface Team {
   logo: string;
   members: User[];
   events: Event[];
-  createdAt: string;
+  created_at: string;
 }
 
 // Event types
@@ -56,5 +56,6 @@ export interface EventRegistration {
   status: 'pending' | 'accepted' | 'declined';
   message: string;
   proofImage: string;
-  createdAt: string;
+  number_of_participants: number;
+  created_at: string;
 }

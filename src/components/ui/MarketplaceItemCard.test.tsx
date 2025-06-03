@@ -17,10 +17,10 @@ const mockItem: MarketplaceItem = {
     email: 'test@example.com',
     avatar: 'test-avatar.jpg',
     teams: [],
-    createdAt: '2024-03-15',
+    created_at: '2024-03-15',
   },
   location: 'Test Location',
-  createdAt: new Date().toISOString(),
+  created_at: new Date().toISOString(),
   isTradeAllowed: true,
 };
 

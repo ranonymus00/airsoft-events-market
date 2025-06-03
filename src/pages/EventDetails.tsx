@@ -37,6 +37,7 @@ const EventDetails: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { authState } = useAuth();
   const [showEditForm, setShowEditForm] = useState(false);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
 
   useEffect(() => {
     loadEvent();
@@ -47,6 +48,7 @@ const EventDetails: React.FC = () => {
 
     try {
       const data = await api.events.getById(id);
+      console.log(data);
       setEvent(data);
     } catch (err) {
       setError("Failed to load event");
@@ -71,7 +73,6 @@ const EventDetails: React.FC = () => {
         rules: formData.rules,
         max_participants: formData.max_participants,
         field_type: formData.field,
-        user_id: authState.user.id // Add user_id to satisfy RLS policy
       };
 
       const data = await api.events.update(event.id, updatedEvent);
@@ -83,13 +84,29 @@ const EventDetails: React.FC = () => {
     }
   };
 
+  const handleRegistrationSubmit = async (
+    message: string,
+    proofImage: string,
+    numberOfParticipants: number
+  ) => {
+    if (!event) return;
+
+    try {
+      await api.events.register(event.id, message, proofImage, numberOfParticipants);
+      await loadEvent();
+      setShowRegistrationForm(false);
+    } catch (err) {
+      console.error("Error submitting registration:", err);
+    }
+  };
+
   const handleUpdateRegistrationStatus = async (
     registrationId: string,
     status: "accepted" | "declined"
   ) => {
     try {
       await api.events.updateRegistrationStatus(registrationId, status);
-      await loadEvent(); // Reload event data
+      await loadEvent();
     } catch (err) {
       console.error("Error updating registration status:", err);
     }
@@ -126,8 +143,18 @@ const EventDetails: React.FC = () => {
     (reg) => reg.user.id === authState.user?.id
   );
 
-  const isEventOwner = authState.user?.id === event.user_id;
-  const isTeamMember = authState.user?.team?.id === event.user.team?.id;
+  const isEventOwner =
+    authState.isAuthenticated && authState.user?.id === event.user_id;
+  const isTeamMember =
+    authState.user?.team?.id &&
+    event.user?.team?.id &&
+    authState.user?.team?.id === event.user?.team?.id;
+  const canRegister =
+    !event.canceled &&
+    authState.isAuthenticated &&
+    !isEventOwner &&
+    !isTeamMember &&
+    !userRegistration;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -163,10 +190,18 @@ const EventDetails: React.FC = () => {
               <h1 className="text-3xl font-bold text-gray-800 mb-2">
                 {event.title}
               </h1>
-              <div className="flex items-center text-gray-600 mb-4">
+              <div className="text-gray-600 mb-4">
                 <span className="flex items-center">
                   <User className="h-5 w-5 mr-1" />
-                  Hosted by {event.user.team?.name || event.user.username}
+                  Hosted by {event.user?.team?.name || event.user?.username}
+                </span>
+                <span className="text-sm">
+                  {
+                    event?.registrations?.filter(
+                      (registration) => registration.status === "accepted"
+                    ).reduce((sum, reg) => sum + (reg.number_of_participants || 1), 0)
+                  }{" "}
+                  / {event?.max_participants} participants
                 </span>
               </div>
             </div>
@@ -224,15 +259,31 @@ const EventDetails: React.FC = () => {
               </div>
             )}
 
-            {(isEventOwner || isTeamMember) && (
-              <EventRegistrationsList
-                registrations={event.registrations}
-                onUpdateStatus={handleUpdateRegistrationStatus}
-              />
+            {canRegister && (
+              <button
+                onClick={() => setShowRegistrationForm(true)}
+                className="w-full py-3 px-4 rounded-md font-bold bg-orange-500 text-white hover:bg-orange-600 transition-colors duration-200"
+              >
+                Join Event
+              </button>
             )}
+
+            <EventRegistrationsList
+              registrations={event.registrations}
+              onUpdateStatus={handleUpdateRegistrationStatus}
+              isEventOwner={isEventOwner}
+            />
           </div>
         </div>
       </div>
+
+      {showRegistrationForm && (
+        <EventRegistrationForm
+          event={event}
+          onSubmit={handleRegistrationSubmit}
+          onCancel={() => setShowRegistrationForm(false)}
+        />
+      )}
 
       {showEditForm && (
         <EventRegistrationForm

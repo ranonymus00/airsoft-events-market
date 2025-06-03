@@ -32,7 +32,7 @@ const ItemDetails: React.FC = () => {
     );
   }
 
-  const timeAgo = formatDistance(new Date(item.createdAt), new Date(), { addSuffix: true });
+  const timeAgo = formatDistance(new Date(item.created_at), new Date(), { addSuffix: true });
   
   const handleShare = () => {
     if (navigator.share) {
@@ -172,7 +172,7 @@ const ItemDetails: React.FC = () => {
                 />
                 <div>
                   <p className="font-medium">{item.seller.username}</p>
-                  <p className="text-gray-500 text-sm">Member since {new Date(item.seller.createdAt).toLocaleDateString()}</p>
+                  <p className="text-gray-500 text-sm">Member since {new Date(item.seller.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
               
