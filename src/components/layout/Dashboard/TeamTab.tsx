@@ -4,7 +4,6 @@ import {
   X,
   AlertCircle,
   Users,
-  Edit,
   AlertTriangle,
 } from "lucide-react";
 import { api } from "../../../lib/api";
@@ -12,6 +11,7 @@ import { TeamApplication, Team } from "../../../types";
 import Button from "../../ui/Button";
 import EmptySection from "../../ui/EmptySection";
 import { useNavigate } from "react-router-dom";
+import AvatarUpload from "../../ui/AvatarUpload";
 
 interface TeamApplicationsProps {
   applications: TeamApplication[] | undefined;
@@ -160,35 +160,20 @@ const TeamApplications: React.FC<TeamApplicationsProps> = ({
           <div>
             <h3 className="text-lg font-semibold mb-4">Team Information</h3>
             <div className="relative inline-block mb-4">
-              <img
-                src={formData?.logo}
+              <AvatarUpload
+                src={formData?.logo || ""}
                 alt={team?.name}
-                className="w-32 h-32 rounded-full object-cover"
-              />
-              <button
-                onClick={() => {
-                  const input = document.createElement("input");
-                  input.type = "file";
-                  input.accept = "image/*";
-                  input.onchange = (e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          logo: reader.result as string,
-                        }));
-                      };
-                      reader.readAsDataURL(file);
-                    }
+                onChange={(file) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      logo: reader.result as string,
+                    }));
                   };
-                  input.click();
+                  reader.readAsDataURL(file);
                 }}
-                className="absolute bottom-0 right-0 bg-orange-500 text-white p-2 rounded-full hover:bg-orange-600 transition-colors duration-200"
-              >
-                <Edit className="h-4 w-4" />
-              </button>
+              />
             </div>
             <div className="grid grid-cols-1 gap-4">
               <div>

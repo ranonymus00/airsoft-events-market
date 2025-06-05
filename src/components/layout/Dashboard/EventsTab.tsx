@@ -5,6 +5,9 @@ import { Event } from "../../../types";
 import Button from "../../ui/Button";
 import EmptySection from "../../ui/EmptySection";
 import { getParticipants } from "../../../utils/events";
+import Section from "../../ui/Section";
+import Card from "../../ui/Card";
+import Spinner from "../../ui/Spinner";
 
 interface EventsTabProps {
   events: Event[];
@@ -22,7 +25,7 @@ const EventsTab: React.FC<EventsTabProps> = ({
   onDeleteEvent,
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <Section>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">My Events</h2>
         <Button
@@ -36,15 +39,12 @@ const EventsTab: React.FC<EventsTabProps> = ({
 
       {loading ? (
         <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+          <Spinner />
         </div>
       ) : events.length > 0 ? (
         <div className="space-y-4">
           {events.map((event) => (
-            <div
-              key={event.id}
-              className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow duration-200"
-            >
+            <Card key={event.id}>
               <div className="flex flex-col sm:flex-row gap-4">
                 <img
                   src={event.image}
@@ -110,20 +110,20 @@ const EventsTab: React.FC<EventsTabProps> = ({
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       ) : (
         <EmptySection
-          icon={<Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
-          title="No events found"
+          icon={<Calendar className="h-12 w-12 text-orange-500 mx-auto mb-4" />}
+          title="No events yet"
           description="You haven't created any events yet."
-          buttonText="Create First Event"
+          buttonText="Create Event"
           onButtonClick={onCreateEvent}
         />
       )}
-    </div>
+    </Section>
   );
 };
 
-export default EventsTab; 
+export default EventsTab;

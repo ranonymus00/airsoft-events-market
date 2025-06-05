@@ -4,6 +4,9 @@ import { PlusCircle, Edit, Trash2, ShoppingBag } from "lucide-react";
 import { MarketplaceItem } from "../../../types/dashboard";
 import Button from "../../ui/Button";
 import EmptySection from "../../ui/EmptySection";
+import Section from "../../ui/Section";
+import Card from "../../ui/Card";
+import Spinner from "../../ui/Spinner";
 
 interface MarketplaceTabProps {
   items: MarketplaceItem[];
@@ -21,7 +24,7 @@ const MarketplaceTab: React.FC<MarketplaceTabProps> = ({
   onDeleteListing,
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <Section>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">My Listings</h2>
         <Button
@@ -35,15 +38,12 @@ const MarketplaceTab: React.FC<MarketplaceTabProps> = ({
 
       {loading ? (
         <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+          <Spinner />
         </div>
       ) : items.length > 0 ? (
         <div className="space-y-4">
           {items.map((item) => (
-            <div
-              key={item.id}
-              className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow duration-200"
-            >
+            <Card key={item.id}>
               <div className="flex flex-col sm:flex-row gap-4">
                 <img
                   src={item.images[0]}
@@ -99,20 +99,20 @@ const MarketplaceTab: React.FC<MarketplaceTabProps> = ({
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       ) : (
         <EmptySection
-          icon={<ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
-          title="No listings found"
-          description="You haven't created any listings yet."
-          buttonText="Create First Listing"
+          icon={<ShoppingBag className="h-12 w-12 text-orange-500 mx-auto mb-4" />}
+          title="No listings yet"
+          description="You haven't added any marketplace listings yet."
+          buttonText="Add Listing"
           onButtonClick={onCreateListing}
         />
       )}
-    </div>
+    </Section>
   );
 };
 
-export default MarketplaceTab; 
+export default MarketplaceTab;

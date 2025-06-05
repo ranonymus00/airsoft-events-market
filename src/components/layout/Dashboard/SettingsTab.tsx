@@ -1,6 +1,7 @@
 import React from "react";
-import { Edit, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import Button from "../../ui/Button";
+import AvatarUpload from "../../ui/AvatarUpload";
 
 interface SettingsTabProps {
   user: {
@@ -40,17 +41,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         <div>
           <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
           <div className="relative inline-block mb-4">
-            <img
+            <AvatarUpload
               src={previewUrl || user.avatar}
               alt={user.username}
-              className="w-32 h-32 rounded-full object-cover"
+              onChange={onAvatarClick}
             />
-            <button
-              onClick={onAvatarClick}
-              className="absolute bottom-0 right-0 bg-orange-500 text-white p-2 rounded-full hover:bg-orange-600 transition-colors duration-200"
-            >
-              <Edit className="h-4 w-4" />
-            </button>
           </div>
           <div className="grid grid-cols-1 gap-4">
             <div>
@@ -188,4 +183,4 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
   );
 };
 
-export default SettingsTab; 
+export default SettingsTab;

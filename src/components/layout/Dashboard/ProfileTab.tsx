@@ -4,6 +4,9 @@ import { Search, PlusCircle } from "lucide-react";
 import { Team, Event } from "../../../types";
 import { MarketplaceItem } from "../../../types/dashboard";
 import Button from "../../ui/Button";
+import Section from "../../ui/Section";
+import Card from "../../ui/Card";
+import Spinner from "../../ui/Spinner";
 
 interface ProfileTabProps {
   searchTerm: string;
@@ -37,7 +40,7 @@ const ProfileTab: React.FC<ProfileTabProps> = ({
   const isTeamOwner = (team: Team) => team.owner_id === currentUserId;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <Section>
       <h2 className="text-2xl font-bold mb-6">My Profile</h2>
 
       <div className="border-t border-gray-100 pt-6">
@@ -70,15 +73,12 @@ const ProfileTab: React.FC<ProfileTabProps> = ({
 
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+            <Spinner />
           </div>
         ) : (
           <div className="space-y-4">
             {filteredTeams.map((team) => (
-              <div
-                key={team.id}
-                className="border border-gray-200 rounded-lg p-4"
-              >
+              <Card key={team.id}>
                 <div className="flex items-start space-x-4">
                   <img
                     src={team.logo}
@@ -105,7 +105,7 @@ const ProfileTab: React.FC<ProfileTabProps> = ({
                     </Button>
                   )}
                 </div>
-              </div>
+              </Card>
             ))}
 
             {filteredTeams.length === 0 && (
@@ -144,7 +144,7 @@ const ProfileTab: React.FC<ProfileTabProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </Section>
   );
 };
 

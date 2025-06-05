@@ -225,4 +225,9 @@
 - Maintain README
 - Document setup process
 - Keep changelog updated
-- Document API endpoints 
+- Document API endpoints
+
+## Custom Components
+
+### TextInput Component
+- For all text input fields, use the custom `TextInput` component from `src/components/ui/TextInput.tsx`. This component supports `label`, `error`, and `containerClassName` props, and applies consistent Tailwind styling. Do not use raw <input> elements for text fields in new layouts.
