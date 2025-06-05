@@ -11,6 +11,7 @@ import ProfileTab from "../components/layout/Dashboard/ProfileTab";
 import EventsTab from "../components/layout/Dashboard/EventsTab";
 import MarketplaceTab from "../components/layout/Dashboard/MarketplaceTab";
 import SettingsTab from "../components/layout/Dashboard/SettingsTab";
+import TeamApplications from "../components/layout/Dashboard/TeamTab";
 
 const Dashboard: React.FC = () => {
   const { authState, updateProfile } = useAuth();
@@ -32,6 +33,7 @@ const Dashboard: React.FC = () => {
   // State for data from API
   const [userEvents, setUserEvents] = useState<Event[]>([]);
   const [userItems, setUserItems] = useState<MarketplaceItem[]>([]);
+  const [userTeam, setUserTeam] = useState<Team>();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState({
     events: true,
@@ -83,10 +85,24 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const loadUserTeam = async () => {
+    if (!authState?.user?.id) return;
+
+    try {
+      const team = await api.teams.getUserTeam(authState.user.id);
+      setUserTeam(team);
+    } catch (err) {
+      console.error("Error loading user team:", err);
+    } finally {
+      setLoading((prev) => ({ ...prev, teams: false }));
+    }
+  };
+
   useEffect(() => {
     loadUserEvents();
     loadUserItems();
     loadTeams();
+    loadUserTeam();
   }, [authState?.user?.id]);
 
   // Redirect if not authenticated
@@ -196,6 +212,18 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleApplyToTeam = async (teamId: string) => {
+    if (!authState?.user?.id) return;
+
+    try {
+      await api.teams.apply(teamId);
+      await loadTeams();
+    } catch (err) {
+      console.error("Error applying to team:", err);
+      setError("Failed to apply to team. Please try again.");
+    }
+  };
+
   if (!authState?.user) {
     return null;
   }
@@ -229,6 +257,8 @@ const Dashboard: React.FC = () => {
                 userEvents={userEvents}
                 userItems={userItems}
                 userTeam={authState.user.team || undefined}
+                onApplyToTeam={handleApplyToTeam}
+                currentUserId={authState.user.id}
               />
             )}
 
@@ -249,6 +279,13 @@ const Dashboard: React.FC = () => {
                 onCreateListing={() => {}}
                 onEditListing={() => {}}
                 onDeleteListing={() => {}}
+              />
+            )}
+
+            {activeTab === "team" && (
+              <TeamApplications
+                applications={userTeam?.applications}
+                team={userTeam}
               />
             )}
 

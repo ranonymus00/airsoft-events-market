@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Calendar, ShoppingBag, Settings } from "lucide-react";
+import { User, Calendar, ShoppingBag, Settings, Users } from "lucide-react";
 
 interface DashboardSidebarProps {
   activeTab: string;
@@ -20,6 +20,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     { id: "profile", label: "Profile", icon: User },
     { id: "events", label: "My Events", icon: Calendar },
     { id: "marketplace", label: "My Listings", icon: ShoppingBag },
+    { id: "team", label: "My Team", icon: Users },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -69,4 +70,4 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   );
 };
 
-export default DashboardSidebar; 
+export default DashboardSidebar;

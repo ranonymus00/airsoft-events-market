@@ -1,5 +1,5 @@
 import { CheckCircle, Clock, XCircle } from "lucide-react";
-import { EventRegistration } from "../types";
+import { EventRegistration, User } from "../types";
 
 export const getStatusDisplay = (status: string) => {
   switch (status) {
@@ -37,4 +37,19 @@ export const getParticipants = (
       (sum, reg) => sum + (reg.number_of_participants || 1),
       0
     )} / ${max_participants} participants`;
+};
+
+export const getHostData = (user: User) => {
+  console.log(user);
+  if (user?.team?.id) {
+    return {
+      name: user.team.name,
+      logo: user.team.logo,
+    };
+  } else {
+    return {
+      name: user.username,
+      logo: user.avatar,
+    };
+  }
 };

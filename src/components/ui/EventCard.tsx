@@ -4,24 +4,13 @@ import { Calendar, MapPin, Clock, Users } from "lucide-react";
 import { Event } from "../../types";
 import { format } from "date-fns";
 import Button from "./Button";
-import { getParticipants } from "../../utils/events";
+import { getHostData, getParticipants } from "../../utils/events";
 
 interface EventCardProps {
   event: Event;
 }
 
 const EventCard: React.FC<EventCardProps> = ({ event }) => {
-  // Get the host name with fallback values
-  const getHostName = () => {
-    if (event.user?.team?.name) {
-      return event.user.team.name;
-    }
-    if (event.user?.username) {
-      return event.user.username;
-    }
-    return "Unknown Host";
-  };
-
   return (
     <Link
       to={`/events/${event.id}`}
@@ -46,7 +35,9 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
           <h3 className="text-white text-xl font-bold truncate">
             {event.title}
           </h3>
-          <p className="text-white/90 text-sm">Hosted by {getHostName()}</p>
+          <p className="text-white/90 text-sm">
+            Hosted by {getHostData(event.user).name}
+          </p>
         </div>
       </div>
 

@@ -1,0 +1,337 @@
+import React, { useState } from "react";
+import {
+  Check,
+  X,
+  AlertCircle,
+  Users,
+  Edit,
+  AlertTriangle,
+} from "lucide-react";
+import { api } from "../../../lib/api";
+import { TeamApplication, Team } from "../../../types";
+import Button from "../../ui/Button";
+import EmptySection from "../../ui/EmptySection";
+import { useNavigate } from "react-router-dom";
+
+interface TeamApplicationsProps {
+  applications: TeamApplication[] | undefined;
+  team: Team | null;
+}
+
+const TeamApplications: React.FC<TeamApplicationsProps> = ({
+  applications,
+  team,
+}) => {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<"applications" | "settings">(
+    "settings"
+  );
+  const [formData, setFormData] = useState({
+    logo: team?.logo,
+    name: team?.name,
+    description: team?.description,
+    location: team?.location,
+    play_style: team?.play_style,
+  });
+  const [error, setError] = useState<string>("");
+
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleApproveApplication = async (applicationId: string) => {
+    try {
+      await api.teams.approveApplication(applicationId);
+    } catch (err) {
+      console.error("Error approving application:", err);
+      setError("Failed to approve application. Please try again.");
+    }
+  };
+
+  const handleRejectApplication = async (applicationId: string) => {
+    try {
+      await api.teams.rejectApplication(applicationId);
+    } catch (err) {
+      console.error("Error rejecting application:", err);
+      setError("Failed to reject application. Please try again.");
+    }
+  };
+
+  const handleTeamUpdate = async (teamData: Partial<Team>) => {
+    if (!team?.id) return;
+
+    try {
+      await api.teams.update(team.id, teamData);
+    } catch (err) {
+      console.error("Error updating team:", err);
+      setError("Failed to update team. Please try again.");
+    }
+  };
+
+  const renderApplications = () => {
+    if (!applications || applications.length === 0) {
+      return (
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <p className="text-gray-600 text-center">No pending applications</p>
+        </div>
+      );
+    }
+
+    const pendingApplications = applications.filter(
+      (app) => app.status === "pending"
+    );
+
+    return (
+      <div className="mt-6">
+        <h3 className="text-lg font-semibold mb-4">Pending Applications</h3>
+        <div className="space-y-4">
+          {pendingApplications.map((application) => (
+            <div
+              key={application.id}
+              className="bg-white border border-gray-200 rounded-lg p-4"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <img
+                    src={application.user.avatar}
+                    alt={application.user.username}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div>
+                    <h4 className="font-medium text-gray-900">
+                      {application.user.username}
+                    </h4>
+                    <p className="text-sm text-gray-500">
+                      Applied{" "}
+                      {new Date(application.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    size="small"
+                    variant="primary"
+                    leftIcon={<Check className="h-4 w-4" />}
+                    onClick={() => handleApproveApplication(application.id)}
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="secondary"
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                    leftIcon={<X className="h-4 w-4" />}
+                    onClick={() => handleRejectApplication(application.id)}
+                  >
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderSettings = () => {
+    return (
+      <div className="mt-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-semibold">Team Settings</h3>
+        </div>
+
+        <div className="space-y-8">
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 flex items-start">
+              <AlertCircle className="h-5 w-5 text-red-500 mr-3 mt-0.5 flex-shrink-0" />
+              <p className="text-red-700">{error}</p>
+            </div>
+          )}
+
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Team Information</h3>
+            <div className="relative inline-block mb-4">
+              <img
+                src={formData?.logo}
+                alt={team?.name}
+                className="w-32 h-32 rounded-full object-cover"
+              />
+              <button
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = "image/*";
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          logo: reader.result as string,
+                        }));
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  };
+                  input.click();
+                }}
+                className="absolute bottom-0 right-0 bg-orange-500 text-white p-2 rounded-full hover:bg-orange-600 transition-colors duration-200"
+              >
+                <Edit className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Team Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Play Style
+                </label>
+                <select
+                  name="play_style"
+                  value={formData.play_style || ""}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="">Select play style</option>
+                  <option value="casual">Casual</option>
+                  <option value="competitive">Competitive</option>
+                  <option value="milsim">Milsim</option>
+                  <option value="speedsoft">Speedsoft</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-4">
+              <Button size="small" onClick={() => handleTeamUpdate(formData)}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 pt-6">
+            <h3 className="text-lg font-semibold mb-4 text-red-600">
+              Danger Zone
+            </h3>
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="flex items-start">
+                <AlertTriangle className="h-6 w-6 text-red-500 mr-3 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium text-red-700">Delete Team</h4>
+                  <p className="text-red-600 text-sm mt-1">
+                    Once you delete your team, there is no going back. Please be
+                    certain.
+                  </p>
+                  <button
+                    className="mt-4 bg-white border border-red-500 text-red-600 hover:bg-red-50 py-2 px-4 rounded-md transition-colors duration-200"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "Are you sure you want to delete this team?"
+                        )
+                      ) {
+                        // handleTeamDelete();
+                      }
+                    }}
+                  >
+                    Delete Team
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  return (
+    <div>
+      {team ? (
+        <div>
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`${
+                  activeTab === "settings"
+                    ? "border-orange-500 text-orange-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                Team Settings
+              </button>
+              <button
+                onClick={() => setActiveTab("applications")}
+                className={`${
+                  activeTab === "applications"
+                    ? "border-orange-500 text-orange-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                Applications
+              </button>
+            </nav>
+          </div>
+
+          {activeTab === "applications"
+            ? renderApplications()
+            : renderSettings()}
+        </div>
+      ) : (
+        <EmptySection
+          icon={<Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
+          title="No team found"
+          description="You haven't created a team yet."
+          buttonText="Create your Team"
+          onButtonClick={() => navigate("/create-team")}
+        />
+      )}
+    </div>
+  );
+};
+
+export default TeamApplications;

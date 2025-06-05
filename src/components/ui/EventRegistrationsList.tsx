@@ -37,7 +37,7 @@ const EventRegistrationsList: React.FC<EventRegistrationsListProps> = ({
                   alt={registration.user.username}
                   className="w-10 h-10 rounded-full object-cover"
                 />
-                <div className="ml-3">
+                <div className="ml-2">
                   <h4 className="font-medium text-gray-900">
                     {registration.user.username}
                   </h4>

@@ -26,6 +26,7 @@ const EmptySection: React.FC<EmptySectionProps> = ({
         variant="link"
         leftIcon={<PlusCircle className="h-5 w-5" />}
         onClick={onButtonClick}
+        className="m-auto"
       >
         {buttonText}
       </Button>

@@ -3,16 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { Users, Upload, AlertCircle } from "lucide-react";
 import { api } from "../lib/api";
 import Button from "../components/ui/Button";
+import { useAuth } from "../contexts/AuthContext";
+import { Team } from "../types";
 
 const CreateTeam: React.FC = () => {
+  const { authState } = useAuth();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Partial<Team>>({
     name: "",
-    location: "",
     description: "",
-    playStyle: "",
     logo: "",
+    play_style: undefined,
   });
 
   const [error, setError] = useState("");
@@ -30,24 +32,32 @@ const CreateTeam: React.FC = () => {
     }));
   };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!formData.name || !formData.location || !formData.description) {
+    if (!formData.name || !formData.description) {
       setError("Please fill in all required fields");
+      return;
+    }
+
+    if (!authState?.user?.id) {
+      setError("You must be logged in to create a team");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      await api.teams.create({
+      const newTeam = {
         name: formData.name,
         description: formData.description,
         logo: formData.logo,
-      });
+        play_style: formData.play_style,
+        owner_id: authState.user.id,
+      };
+
+      await api.teams.create(newTeam);
 
       // Navigate to success page or show success message
       navigate("/dashboard", {
@@ -106,20 +116,6 @@ const CreateTeam: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Location *
-                  </label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="City, State"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Team Logo
                   </label>
                   <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
@@ -135,7 +131,6 @@ const CreateTeam: React.FC = () => {
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                // Handle file upload
                                 const reader = new FileReader();
                                 reader.onloadend = () => {
                                   setFormData((prev) => ({
@@ -176,8 +171,8 @@ const CreateTeam: React.FC = () => {
                     Play Style
                   </label>
                   <select
-                    name="playStyle"
-                    value={formData.playStyle}
+                    name="play_style"
+                    value={formData.play_style || ""}
                     onChange={handleInputChange}
                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                   >

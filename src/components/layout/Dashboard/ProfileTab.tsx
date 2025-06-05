@@ -12,7 +12,9 @@ interface ProfileTabProps {
   loading: boolean;
   userEvents: Event[];
   userItems: MarketplaceItem[];
-  userTeam?: { name: string };
+  userTeam?: { name: string; id: string };
+  onApplyToTeam: (teamId: string) => void;
+  currentUserId: string;
 }
 
 const ProfileTab: React.FC<ProfileTabProps> = ({
@@ -23,12 +25,16 @@ const ProfileTab: React.FC<ProfileTabProps> = ({
   userEvents,
   userItems,
   userTeam,
+  onApplyToTeam,
+  currentUserId,
 }) => {
   const filteredTeams = teams.filter(
     (team) =>
       team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       team.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const isTeamOwner = (team: Team) => team.owner_id === currentUserId;
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
@@ -39,7 +45,10 @@ const ProfileTab: React.FC<ProfileTabProps> = ({
           <h3 className="text-lg font-bold">Teams</h3>
           {!userTeam && (
             <Link to={"/create-team"}>
-              <Button size="small" leftIcon={<PlusCircle className="h-5 w-5" />}>
+              <Button
+                size="small"
+                leftIcon={<PlusCircle className="h-5 w-5" />}
+              >
                 Create Team
               </Button>
             </Link>
@@ -82,11 +91,18 @@ const ProfileTab: React.FC<ProfileTabProps> = ({
                       {team.description}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {team.members.length} members
+                      {team.members?.length || 1} members
                     </p>
+                    {isTeamOwner(team) && (
+                      <p className="text-sm text-orange-500 mt-1">
+                        You are the owner
+                      </p>
+                    )}
                   </div>
-                  {!userTeam && (
-                    <Button size="small">Join Team</Button>
+                  {!userTeam && !isTeamOwner(team) && (
+                    <Button size="small" onClick={() => onApplyToTeam(team.id)}>
+                      Apply to Join
+                    </Button>
                   )}
                 </div>
               </div>
@@ -132,4 +148,4 @@ const ProfileTab: React.FC<ProfileTabProps> = ({
   );
 };
 
-export default ProfileTab; 
+export default ProfileTab;

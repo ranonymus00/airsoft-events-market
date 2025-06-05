@@ -17,7 +17,7 @@ import EventRegistrationsList from "../components/ui/EventRegistrationsList";
 import { api } from "../lib/api";
 import { Event } from "../types";
 import Button from "../components/ui/Button";
-import { getParticipants } from "../utils/events";
+import { getHostData, getParticipants } from "../utils/events";
 import AdSpace from "../components/ui/AdSpace";
 
 interface EventFormData {
@@ -166,6 +166,8 @@ const EventDetails: React.FC = () => {
     !isTeamMember &&
     !userRegistration;
 
+  const hostInfo = getHostData(event.user);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
@@ -201,17 +203,27 @@ const EventDetails: React.FC = () => {
                   <h1 className="text-3xl font-bold text-gray-800 mb-2">
                     {event.title}
                   </h1>
-                  <div className="text-gray-600 mb-4">
-                    <span className="flex items-center">
-                      <User className="h-5 w-5 mr-1" />
-                      Hosted by {event.user?.team?.name || event.user?.username}
-                    </span>
-                    <span className="text-sm">
-                      {getParticipants(
-                        event.registrations,
-                        event.max_participants
-                      )}
-                    </span>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="relative inline-block">
+                      <img
+                        src={hostInfo.logo}
+                        alt={hostInfo.name}
+                        className="w-28 h-28 rounded-full object-cover"
+                      />
+                    </div>
+
+                    <div className="text-gray-600">
+                      <span className="flex items-center">
+                        <User className="h-5 w-5 mr-1" />
+                        Hosted by {hostInfo.name}
+                      </span>
+                      <span className="text-sm">
+                        {getParticipants(
+                          event.registrations,
+                          event.max_participants
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
 

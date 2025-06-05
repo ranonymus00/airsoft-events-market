@@ -13,7 +13,7 @@ export const api = {
             id,
             username,
             avatar,
-            team:teams(
+            team:teams->team_members(
               id,
               name,
               logo
@@ -30,7 +30,7 @@ export const api = {
               id,
               username,
               avatar,
-              team:teams(
+              team:teams->team_members(
                 id,
                 name,
                 logo
@@ -55,7 +55,7 @@ export const api = {
             id,
             username,
             avatar,
-            team:teams(
+            team:teams!team_members(
               id,
               name,
               logo
@@ -72,7 +72,7 @@ export const api = {
               id,
               username,
               avatar,
-              team:teams(
+              team:teams!team_members(
                 id,
                 name,
                 logo
@@ -88,11 +88,18 @@ export const api = {
       return data;
     },
 
-    async register(eventId: string, message: string, proofImage: string, numberOfParticipants: number = 1) {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+    async register(
+      eventId: string,
+      message: string,
+      proofImage: string,
+      numberOfParticipants: number = 1
+    ) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
-        throw new Error('User must be authenticated to register for an event');
+        throw new Error("User must be authenticated to register for an event");
       }
 
       const { data, error } = await supabase
@@ -103,9 +110,10 @@ export const api = {
           message,
           proof_image: proofImage,
           number_of_participants: numberOfParticipants,
-          status: 'pending'
+          status: "pending",
         })
-        .select(`
+        .select(
+          `
           id,
           status,
           message,
@@ -116,13 +124,14 @@ export const api = {
             id,
             username,
             avatar,
-            team:teams(
+            team:teams!team_members(
               id,
               name,
               logo
             )
           )
-        `)
+        `
+        )
         .single();
 
       if (error) throw error;
@@ -148,14 +157,13 @@ export const api = {
       const { data, error } = await supabase
         .from("events")
         .update(event)
-        .eq("id", id)
-        .select(`
+        .eq("id", id).select(`
           *,
           user:users!events_user_id_fkey(
             id,
             username,
             avatar,
-            team:teams(
+            team:teams!team_members(
               id,
               name,
               logo
@@ -223,27 +231,223 @@ export const api = {
   },
 
   teams: {
-    async getAll() {
+    getAll: async (): Promise<Team[]> => {
       const { data, error } = await supabase.from("teams").select(`
           *,
-          members:team_members(
-            user:users(*)
+          users!teams_owner_id_fkey(
+            id,
+            username,
+            email,
+            avatar,
+            created_at
+          ),
+          team_members!team_members_team_id_fkey(
+            joined_at,
+            users!team_members_user_id_fkey(
+              id,
+              username,
+              email,
+              avatar,
+              created_at
+            )
+          ),
+          team_applications!team_applications_team_id_fkey(
+            status,
+            created_at,
+            updated_at,
+            users!team_applications_user_id_fkey(
+              id,
+              username,
+              email,
+              avatar
+            )
           )
         `);
-
       if (error) throw error;
       return data;
     },
-
-    async create(team: Partial<Team>) {
+    getUserTeam: async (userId: string): Promise<Team> => {
       const { data, error } = await supabase
         .from("teams")
-        .insert(team)
+        .select(
+          `
+          *,
+          team_members!team_members_team_id_fkey(
+            joined_at,
+            users!team_members_user_id_fkey(
+              id,
+              username,
+              email,
+              avatar,
+              created_at
+            )
+          ),
+          team_applications!team_applications_team_id_fkey(
+            status,
+            created_at,
+            updated_at,
+            users!team_applications_user_id_fkey(
+              id,
+              username,
+              email,
+              avatar
+            )
+          )
+        `
+        )
+        .eq("owner_id", userId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    create: async (team: Partial<Team>): Promise<Team> => {
+      const { data: newTeam, error: teamError } = await supabase
+        .from("teams")
+        .insert([team])
         .select()
+        .single();
+
+      if (teamError) throw teamError;
+
+      // Add owner to team_members
+      const { error: memberError } = await supabase
+        .from("team_members")
+        .insert([
+          {
+            team_id: newTeam.id,
+            user_id: team.owner_id,
+            role: "owner",
+          },
+        ]);
+
+      if (memberError) throw memberError;
+
+      // Get the complete team data with all relationships
+      const { data, error } = await supabase
+        .from("teams")
+        .select(`
+          *,
+          users!teams_owner_id_fkey(
+            id,
+            username,
+            email,
+            avatar,
+            created_at
+          ),
+          team_members!team_members_team_id_fkey(
+            joined_at,
+            role,
+            users!team_members_user_id_fkey(
+              id,
+              username,
+              email,
+              avatar,
+              created_at
+            )
+          ),
+          team_applications!team_applications_team_id_fkey(
+            status,
+            created_at,
+            updated_at,
+            users!team_applications_user_id_fkey(
+              id,
+              username,
+              email,
+              avatar
+            )
+          )
+        `)
+        .eq("id", newTeam.id)
         .single();
 
       if (error) throw error;
       return data;
+    },
+    update: async (teamId: string, team: Partial<Team>): Promise<Team> => {
+      const { data, error } = await supabase
+        .from("teams")
+        .update(team)
+        .eq("id", teamId)
+        .select(
+          `
+          *,
+          users!teams_owner_id_fkey(
+            id,
+            username,
+            email,
+            avatar,
+            created_at
+          ),
+          team_members!team_members_team_id_fkey(
+            joined_at,
+            users!team_members_user_id_fkey(
+              id,
+              username,
+              email,
+              avatar,
+              created_at
+            )
+          ),
+          team_applications!team_applications_team_id_fkey(
+            status,
+            created_at,
+            updated_at,
+            users!team_applications_user_id_fkey(
+              id,
+              username,
+              email,
+              avatar
+            )
+          )
+        `
+        )
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    apply: async (teamId: string): Promise<void> => {
+      const { error } = await supabase.from("team_applications").insert([
+        {
+          team_id: teamId,
+          status: "pending",
+        },
+      ]);
+      if (error) throw error;
+    },
+    approveApplication: async (applicationId: string): Promise<void> => {
+      const { error: applicationError } = await supabase
+        .from("team_applications")
+        .update({ status: "approved" })
+        .eq("id", applicationId);
+
+      if (applicationError) throw applicationError;
+
+      const { data: application, error: fetchError } = await supabase
+        .from("team_applications")
+        .select("user_id, team_id")
+        .eq("id", applicationId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const { error: memberError } = await supabase
+        .from("team_members")
+        .insert([
+          {
+            user_id: application.user_id,
+            team_id: application.team_id,
+            role: "member",
+          },
+        ]);
+
+      if (memberError) throw memberError;
+    },
+    rejectApplication: async (applicationId: string): Promise<void> => {
+      const { error } = await supabase
+        .from("team_applications")
+        .update({ status: "rejected" })
+        .eq("id", applicationId);
+      if (error) throw error;
     },
   },
 };

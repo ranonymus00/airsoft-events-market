@@ -21,9 +21,34 @@ export interface Team {
   name: string;
   description: string;
   logo: string;
-  members: User[];
+  location?: string;
+  owner_id: string;
+  owner: User;
+  members: TeamMember[];
+  applications: TeamApplication[];
   events: Event[];
   created_at: string;
+  updated_at: string;
+  play_style?: "casual" | "competitive" | "milsim" | "speedsoft";
+}
+
+export interface TeamMember {
+  id: string;
+  user_id: string;
+  team_id: string;
+  role: "owner" | "member";
+  joined_at: string;
+  user: User;
+}
+
+export interface TeamApplication {
+  id: string;
+  user_id: string;
+  team_id: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  updated_at: string;
+  user: User;
 }
 
 // Event types
@@ -54,7 +79,7 @@ export interface EventRegistration {
   eventId: string;
   userId: string;
   user: User;
-  status: 'pending' | 'accepted' | 'declined';
+  status: "pending" | "accepted" | "declined";
   message: string;
   proofImage: string;
   number_of_participants: number;
