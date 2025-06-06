@@ -23,12 +23,12 @@ export interface Team {
   logo: string;
   location?: string;
   owner_id: string;
-  owner: User;
+  owner?: User;
   members: TeamMember[];
   applications: TeamApplication[];
   events: Event[];
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
   play_style?: "casual" | "competitive" | "milsim" | "speedsoft";
 }
 
@@ -87,12 +87,82 @@ export interface Event {
 
 export interface EventRegistration {
   id: string;
-  eventId: string;
-  userId: string;
+  event_id: string;
+  user_id: string;
   user: User;
   status: "pending" | "accepted" | "declined";
   message: string;
-  proofImage: string;
+  proof_image: string;
   number_of_participants: number;
   created_at: string;
+}
+
+// Marketplace types
+export interface MarketplaceItem {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  condition: string;
+  category: string;
+  images: string[];
+  seller: User;
+  location: string;
+  created_at: string;
+  is_trade_allowed?: boolean;
+  isTradeAllowed?: boolean; // Legacy support
+}
+
+// Form types
+export interface EventFormData {
+  title: string;
+  description: string;
+  image: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  rules: string;
+  max_participants: number;
+  map_id: string;
+}
+
+// Dashboard types
+export interface DashboardState {
+  activeTab: string;
+  searchTerm: string;
+  error: string | null;
+  selectedFile: File | null;
+  previewUrl: string | null;
+  profileForm: {
+    email: string;
+    username: string;
+  };
+  showCreateEventForm: boolean;
+  showEditEventForm: boolean;
+  selectedEvent: Event | null;
+  userEvents: Event[];
+  userItems: MarketplaceItem[];
+  teams: Team[];
+  loading: {
+    events: boolean;
+    items: boolean;
+    teams: boolean;
+  };
+}
+
+export interface DashboardProps {
+  authState: {
+    isAuthenticated: boolean;
+    loading: boolean;
+    user?: {
+      id: string;
+      email: string;
+      username: string;
+      avatar: string;
+      team?: {
+        name: string;
+      };
+    };
+  };
+  updateProfile: (data: { avatar: string; email: string; username: string }) => Promise<boolean>;
 }

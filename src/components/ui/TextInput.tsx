@@ -1,4 +1,5 @@
 import React from "react";
+import FormFieldWrapper from "./FormFieldWrapper";
 
 interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -13,18 +14,12 @@ const TextInput: React.FC<TextInputProps> = ({
   className = "",
   ...props
 }) => (
-  <div className={containerClassName}>
-    {label && (
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-    )}
+  <FormFieldWrapper label={label} error={error} containerClassName={containerClassName}>
     <input
       className={`w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 ${className}`}
       {...props}
     />
-    {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
-  </div>
+  </FormFieldWrapper>
 );
 
 export default TextInput;

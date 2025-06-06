@@ -1,5 +1,11 @@
 import { supabase } from "./supabase";
 import { Team, Event, TeamMap } from "../types";
+import { 
+  transformEventsData, 
+  transformEventData, 
+  transformTeamsData, 
+  transformTeamData 
+} from "../utils/dataTransformers";
 
 export const api = {
   events: {
@@ -33,16 +39,7 @@ export const api = {
         .order("date", { ascending: true });
 
       if (error) throw error;
-
-      const events = data.map((event) => ({
-        ...event,
-        user: {
-          ...event.user,
-          team: event.user?.team?.team || null,
-        },
-      }));
-
-      return events;
+      return transformEventsData(data);
     },
 
     async getById(id: string) {
@@ -88,27 +85,7 @@ export const api = {
         .single();
 
       if (error) throw error;
-
-      const registrations =
-        data.registrations &&
-        data.registrations.map((registration) => ({
-          ...registration,
-          user: {
-            ...registration.user,
-            team: registration.user?.team?.team || null,
-          },
-        }));
-
-      const event = {
-        ...data,
-        user: {
-          ...data.user,
-          team: data.user?.team?.team || null,
-        },
-        registrations: registrations,
-      };
-
-      return event;
+      return transformEventData(data);
     },
 
     async register(
@@ -229,7 +206,7 @@ export const api = {
         );
       }
 
-      return data[0];
+      return transformEventData(data[0]);
     },
   },
 
@@ -300,8 +277,9 @@ export const api = {
           )
         `);
       if (error) throw error;
-      return data;
+      return transformTeamsData(data);
     },
+
     getUserTeam: async (userId: string): Promise<Team> => {
       const { data, error } = await supabase
         .from("teams")
@@ -334,8 +312,9 @@ export const api = {
         .eq("owner_id", userId)
         .single();
       if (error) throw error;
-      return data;
+      return transformTeamData(data);
     },
+
     create: async (team: Partial<Team>): Promise<Team> => {
       const { data: newTeam, error: teamError } = await supabase
         .from("teams")
@@ -399,8 +378,9 @@ export const api = {
         .single();
 
       if (error) throw error;
-      return data;
+      return transformTeamData(data);
     },
+
     update: async (teamId: string, team: Partial<Team>): Promise<Team> => {
       const { data, error } = await supabase
         .from("teams")
@@ -441,8 +421,9 @@ export const api = {
         )
         .single();
       if (error) throw error;
-      return data;
+      return transformTeamData(data);
     },
+
     apply: async (teamId: string): Promise<void> => {
       const { error } = await supabase.from("team_applications").insert([
         {
@@ -452,6 +433,7 @@ export const api = {
       ]);
       if (error) throw error;
     },
+
     approveApplication: async (applicationId: string): Promise<void> => {
       const { error: applicationError } = await supabase
         .from("team_applications")
@@ -480,6 +462,7 @@ export const api = {
 
       if (memberError) throw memberError;
     },
+
     rejectApplication: async (applicationId: string): Promise<void> => {
       const { error } = await supabase
         .from("team_applications")

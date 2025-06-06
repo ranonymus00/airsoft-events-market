@@ -4,6 +4,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { Event, TeamMap } from "../../types";
 import { api } from "../../lib/api";
 import Button from "./Button";
+import Modal from "./Modal";
+import TextInput from "./TextInput";
+import TextareaInput from "./TextareaInput";
+import SelectInput from "./SelectInput";
 import FileUpload from "./FileUpload";
 
 interface CreateEventFormProps {
@@ -86,192 +90,134 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     }
   };
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="max-w-2xl w-full mx-4 overflow-auto h-[90dvh]">
-        <div className="bg-white p-6 rounded-lg">
-          <h2 className="text-2xl font-bold mb-6">
-            {event ? "Edit Event" : "Create New Event"}
-          </h2>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={event ? "Edit Event" : "Create New Event"}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <TextInput
+          label="Title"
+          name="title"
+          value={formData.title}
+          onChange={handleInputChange}
+          required
+        />
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Title
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, title: e.target.value }))
-                }
-                className="w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
+        <TextareaInput
+          label="Description"
+          name="description"
+          value={formData.description}
+          onChange={handleInputChange}
+          rows={4}
+          required
+        />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                required
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                className="w-full p-2 border border-gray-300 rounded-md"
-                rows={4}
-              />
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TextInput
+            label="Date"
+            name="date"
+            type="date"
+            value={formData.date}
+            onChange={handleInputChange}
+            required
+          />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={formData.date}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, date: e.target.value }))
-                  }
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                />
-              </div>
+          <TextInput
+            label="Start Time"
+            name="start_time"
+            type="time"
+            value={formData.start_time}
+            onChange={handleInputChange}
+            required
+          />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Time
-                </label>
-                <input
-                  type="time"
-                  required
-                  value={formData.start_time}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      start_time: e.target.value,
-                    }))
-                  }
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Time
-                </label>
-                <input
-                  type="time"
-                  required
-                  value={formData.end_time}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      end_time: e.target.value,
-                    }))
-                  }
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Map
-              </label>
-              <select
-                required
-                value={formData.map_id}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, map_id: e.target.value }))
-                }
-                className="w-full p-2 border border-gray-300 rounded-md"
-              >
-                <option value="">Select a map</option>
-                {teamMaps.map((map) => (
-                  <option key={map.id} value={map.id}>
-                    {map.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Event Image
-              </label>
-              <FileUpload
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        image: reader.result as string,
-                      }));
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                }}
-                className="w-full p-2 border border-gray-300 rounded-md"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rules
-              </label>
-              <textarea
-                required
-                value={formData.rules}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, rules: e.target.value }))
-                }
-                className="w-full p-2 border border-gray-300 rounded-md"
-                rows={4}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Max Participants
-              </label>
-              <input
-                type="number"
-                required
-                min="1"
-                value={formData.max_participants}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    max_participants: parseInt(e.target.value),
-                  }))
-                }
-                className="w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="cancel" size="small" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" size="small">
-                {event ? "Save Changes" : "Create Event"}
-              </Button>
-            </div>
-          </form>
+          <TextInput
+            label="End Time"
+            name="end_time"
+            type="time"
+            value={formData.end_time}
+            onChange={handleInputChange}
+            required
+          />
         </div>
-      </div>
-    </div>
+
+        <SelectInput
+          label="Map"
+          name="map_id"
+          value={formData.map_id}
+          onChange={handleInputChange}
+          required
+        >
+          <option value="">Select a map</option>
+          {teamMaps.map((map) => (
+            <option key={map.id} value={map.id}>
+              {map.name}
+            </option>
+          ))}
+        </SelectInput>
+
+        <FileUpload
+          label="Event Image"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                setFormData((prev) => ({
+                  ...prev,
+                  image: reader.result as string,
+                }));
+              };
+              reader.readAsDataURL(file);
+            }
+          }}
+          required
+        />
+
+        <TextareaInput
+          label="Rules"
+          name="rules"
+          value={formData.rules}
+          onChange={handleInputChange}
+          rows={4}
+          required
+        />
+
+        <TextInput
+          label="Max Participants"
+          name="max_participants"
+          type="number"
+          min="1"
+          value={formData.max_participants}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              max_participants: parseInt(e.target.value),
+            }))
+          }
+          required
+        />
+
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button variant="cancel" size="small" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" size="small">
+            {event ? "Save Changes" : "Create Event"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };
 

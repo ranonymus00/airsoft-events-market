@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { PlusCircle, Edit, Trash2, ShoppingBag } from "lucide-react";
-import { MarketplaceItem } from "../../../types/dashboard";
+import { MarketplaceItem } from "../../../types";
 import Button from "../../ui/Button";
 import EmptySection from "../../ui/EmptySection";
 import Section from "../../ui/Section";
@@ -85,7 +85,7 @@ const MarketplaceTab: React.FC<MarketplaceTabProps> = ({
                     <span className="bg-gray-100 text-gray-700 text-xs py-1 px-2 rounded-full">
                       {item.category}
                     </span>
-                    {item.isTradeAllowed && (
+                    {(item.isTradeAllowed || item.is_trade_allowed) && (
                       <span className="bg-blue-100 text-blue-700 text-xs py-1 px-2 rounded-full">
                         Trade Allowed
                       </span>
