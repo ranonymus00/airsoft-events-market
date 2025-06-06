@@ -86,7 +86,7 @@ const EventRegistrationsList: React.FC<EventRegistrationsListProps> = ({
 
                 <div className="mt-3">
                   <img
-                    src={registration.proofImage}
+                    src={registration.proof_image}
                     alt="Proof of equipment/experience"
                     className="w-full max-w-md rounded-lg"
                   />

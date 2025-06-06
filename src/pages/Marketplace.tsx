@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, Search, Filter, X, ChevronDown } from "lucide-react";
+import { ShoppingBag, Search, Filter } from "lucide-react";
 import MarketplaceItemCard from "../components/ui/MarketplaceItemCard";
 import AdSpace from "../components/ui/AdSpace";
 import { api } from "../lib/api";

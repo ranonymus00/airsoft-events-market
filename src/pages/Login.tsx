@@ -41,7 +41,6 @@ const Login: React.FC = () => {
       }
 
       const success = await login(email, password);
-      console.log(success);
       if (success) {
         navigate("/dashboard");
       } else {

@@ -10,7 +10,6 @@ interface EventCardProps {
 }
 
 const EventCard: React.FC<EventCardProps> = ({ event }) => {
-  console.log("Rendering EventCard for event:", event);
   return (
     <Link
       to={`/events/${event.id}`}

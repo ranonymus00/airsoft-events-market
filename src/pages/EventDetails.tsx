@@ -39,7 +39,6 @@ const EventDetails: React.FC = () => {
 
     try {
       const data = await api.events.getById(id);
-      console.log(data);
       setEvent(data);
     } catch (err) {
       setError("Failed to load event");

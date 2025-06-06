@@ -24,8 +24,8 @@ export interface Team {
   location?: string;
   owner_id: string;
   owner?: User;
-  members: TeamMember[];
-  applications: TeamApplication[];
+  team_members: TeamMember[];
+  team_applications: TeamApplication[];
   events: Event[];
   created_at: string;
   updated_at?: string;

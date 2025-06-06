@@ -5,7 +5,6 @@ import { TeamApplication, Team, TeamMap } from "../../../types";
 import Button from "../../ui/Button";
 import EmptySection from "../../ui/EmptySection";
 import { useNavigate } from "react-router-dom";
-import AvatarUpload from "../../ui/AvatarUpload";
 import FileUpload from "../../ui/FileUpload";
 
 interface TeamTabProps {

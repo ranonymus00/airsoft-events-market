@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
-  Tag,
   MapPin,
   Clock,
   AlertTriangle,
   ChevronLeft,
   Share2,
-  MessageSquare,
   User,
   ChevronRight,
   ChevronLeft as ArrowLeft,

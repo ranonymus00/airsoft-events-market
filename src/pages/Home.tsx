@@ -12,7 +12,6 @@ const Home: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -26,7 +25,6 @@ const Home: React.FC = () => {
         setItems(itemsData);
       } catch (err) {
         console.error("Error loading home data:", err);
-        setError("Failed to load data");
       } finally {
         setLoading(false);
       }

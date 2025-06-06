@@ -50,7 +50,6 @@ const Register: React.FC = () => {
 
     try {
       const success = await register(username, email, password);
-      console.log("success", success);
       if (success) {
         navigate("/dashboard");
       } else {

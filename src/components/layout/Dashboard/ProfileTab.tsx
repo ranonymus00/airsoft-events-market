@@ -1,8 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Search, PlusCircle } from "lucide-react";
-import { Team, Event } from "../../../types";
-import { MarketplaceItem } from "../../../types/dashboard";
+import { Team, Event, MarketplaceItem } from "../../../types";
 import Button from "../../ui/Button";
 import Section from "../../ui/Section";
 import Card from "../../ui/Card";
@@ -91,7 +90,7 @@ const ProfileTab: React.FC<ProfileTabProps> = ({
                       {team.description}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {team.members?.length || 1} members
+                      {team.team_members?.length || 1} members
                     </p>
                     {isTeamOwner(team) && (
                       <p className="text-sm text-orange-500 mt-1">

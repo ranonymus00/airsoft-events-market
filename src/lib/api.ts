@@ -1,10 +1,11 @@
 import { supabase } from "./supabase";
 import { Team, Event, TeamMap } from "../types";
-import { 
-  transformEventsData, 
-  transformEventData, 
-  transformTeamsData, 
-  transformTeamData 
+
+import {
+  transformEventsData,
+  transformEventData,
+  transformTeamsData,
+  transformTeamData,
 } from "../utils/dataTransformers";
 
 export const api = {
@@ -68,6 +69,7 @@ export const api = {
             created_at,
             number_of_participants,
             user:users!event_registrations_user_id_fkey(
+              id,
               username,
               avatar,
               team:team_members!user_id(
@@ -118,16 +120,18 @@ export const api = {
           status,
           message,
           proof_image,
-          number_of_participants,
           created_at,
+          number_of_participants,
           user:users!event_registrations_user_id_fkey(
             id,
             username,
             avatar,
-            team:teams!team_members(
-              id,
-              name,
-              logo
+            team:team_members!user_id(
+              team:teams(
+                id,
+                name,
+                logo
+              )
             )
           )
         `

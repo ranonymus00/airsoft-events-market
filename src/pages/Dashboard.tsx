@@ -263,7 +263,7 @@ const Dashboard: React.FC = () => {
 
             {activeTab === "team" && (
               <TeamTab
-                applications={authState.user.team?.applications}
+                applications={authState.user.team?.team_applications}
                 team={authState.user.team || null}
               />
             )}
