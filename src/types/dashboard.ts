@@ -17,7 +17,6 @@ export interface EventFormData {
   title: string;
   description: string;
   image: string;
-  location: string;
   date: string;
   start_time: string;
   end_time: string;

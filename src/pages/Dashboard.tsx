@@ -11,6 +11,7 @@ import EventsTab from "../components/layout/Dashboard/EventsTab";
 import MarketplaceTab from "../components/layout/Dashboard/MarketplaceTab";
 import SettingsTab from "../components/layout/Dashboard/SettingsTab";
 import TeamTab from "../components/layout/Dashboard/TeamTab";
+import FileUpload from "../components/ui/FileUpload";
 
 const Dashboard: React.FC = () => {
   const { authState, updateProfile } = useAuth();
@@ -297,11 +298,9 @@ const Dashboard: React.FC = () => {
         />
       )}
 
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleAvatarChange}
+      <FileUpload
         accept="image/*"
+        onChange={handleAvatarChange}
         className="hidden"
       />
     </div>

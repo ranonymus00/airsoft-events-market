@@ -182,23 +182,36 @@ export const api = {
         .update(event)
         .eq("id", id).select(`
           *,
+          map:team_maps!map_id(*),
           user:users!events_user_id_fkey(
-            id,
             username,
             avatar,
-            team:teams!team_members(
-              id,
-              name,
-              logo
+            team:team_members!user_id(
+              team:teams(
+                id,
+                name,
+                logo
+              )
             )
           ),
-          registrations:event_registrations(
+          registrations:event_registrations!event_registrations_event_id_fkey(
             id,
             status,
             message,
             proof_image,
             created_at,
-            user:users(*)
+            number_of_participants,
+            user:users!event_registrations_user_id_fkey(
+              username,
+              avatar,
+              team:team_members!user_id(
+                team:teams(
+                  id,
+                  name,
+                  logo
+                )
+              )
+            )
           )
         `);
 

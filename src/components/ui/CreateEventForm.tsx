@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { Event, TeamMap } from "../../types";
 import { api } from "../../lib/api";
 import Button from "./Button";
+import FileUpload from "./FileUpload";
 
 interface CreateEventFormProps {
   onClose: () => void;
@@ -203,16 +204,25 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Image URL
+                Event Image
               </label>
-              <input
-                type="url"
-                required
-                value={formData.image}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, image: e.target.value }))
-                }
+              <FileUpload
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        image: reader.result as string,
+                      }));
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
                 className="w-full p-2 border border-gray-300 rounded-md"
+                required
               />
             </div>
 

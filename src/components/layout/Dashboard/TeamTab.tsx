@@ -6,6 +6,7 @@ import Button from "../../ui/Button";
 import EmptySection from "../../ui/EmptySection";
 import { useNavigate } from "react-router-dom";
 import AvatarUpload from "../../ui/AvatarUpload";
+import FileUpload from "../../ui/FileUpload";
 
 interface TeamTabProps {
   applications: TeamApplication[] | undefined;
@@ -21,7 +22,6 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
     logo: team?.logo,
     name: team?.name,
     description: team?.description,
-    location: team?.location,
     play_style: team?.play_style,
   });
   const [error, setError] = useState<string>("");
@@ -179,8 +179,7 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Map Photos
             </label>
-            <input
-              type="file"
+            <FileUpload
               multiple
               accept="image/*"
               onChange={(e) => {
@@ -309,19 +308,22 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Team Information</h3>
             <div className="relative inline-block mb-4">
-              <AvatarUpload
-                src={formData?.logo || ""}
-                alt={team?.name}
-                onChange={(file) => {
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      logo: reader.result as string,
-                    }));
-                  };
-                  reader.readAsDataURL(file);
+              <FileUpload
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        logo: reader.result as string,
+                      }));
+                    };
+                    reader.readAsDataURL(file);
+                  }
                 }}
+                className="w-full p-2 border rounded"
               />
             </div>
             <div className="grid grid-cols-1 gap-4">
@@ -346,18 +348,6 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
                   value={formData.description}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>

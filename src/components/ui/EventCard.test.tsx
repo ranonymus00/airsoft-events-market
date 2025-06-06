@@ -7,7 +7,6 @@ const mockEvent: Event = {
   id: 'test-event-1',
   title: 'Test Event',
   description: 'A test event description',
-  location: 'Test Location',
   date: '2025-08-15',
   startTime: '09:00',
   endTime: '17:00',

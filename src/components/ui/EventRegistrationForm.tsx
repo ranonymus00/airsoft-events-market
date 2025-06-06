@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Event } from "../../types";
 import Button from "./Button";
+import FileUpload from "./FileUpload";
 
 interface EventFormData {
   message: string;
@@ -107,8 +108,7 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Proof of Equipment/Experience
             </label>
-            <input
-              type="file"
+            <FileUpload
               accept="image/*"
               onChange={(e) => {
                 const file = e.target.files?.[0];

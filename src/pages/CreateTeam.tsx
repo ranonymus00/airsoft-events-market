@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import Button from "../components/ui/Button";
 import { useAuth } from "../contexts/AuthContext";
 import { Team } from "../types";
+import FileUpload from "../components/ui/FileUpload";
 
 const CreateTeam: React.FC = () => {
   const { authState } = useAuth();
@@ -122,28 +123,24 @@ const CreateTeam: React.FC = () => {
                     <div className="space-y-1 text-center">
                       <Upload className="mx-auto h-12 w-12 text-gray-400" />
                       <div className="flex text-sm text-gray-600">
-                        <label className="relative cursor-pointer bg-white rounded-md font-medium text-orange-500 hover:text-orange-600">
-                          <span>Upload a file</span>
-                          <input
-                            type="file"
-                            className="sr-only"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onloadend = () => {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    logo: reader.result as string,
-                                  }));
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
-                        </label>
-                        <p className="pl-1">or drag and drop</p>
+                        <FileUpload
+                          label={undefined}
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  logo: reader.result as string,
+                                }));
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          className="sr-only"
+                        />
                       </div>
                       <p className="text-xs text-gray-500">
                         PNG, JPG, GIF up to 10MB
