@@ -40,7 +40,6 @@ export const getParticipants = (
 };
 
 export const getHostData = (user: User) => {
-  console.log(user);
   if (user?.team?.id) {
     return {
       name: user.team.name,

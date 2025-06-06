@@ -51,13 +51,25 @@ export interface TeamApplication {
   user: User;
 }
 
+export interface TeamMap {
+  id: string;
+  team_id: string;
+  name: string;
+  description?: string;
+  location?: string;
+  google_maps_link?: string;
+  field_type?: string;
+  photos?: string[];
+  created_at: string;
+}
+
 // Event types
 export interface Event {
   id: string;
   title: string;
   description: string;
-  location: string;
-  maps_link: string;
+  map_id?: string; // Relates to TeamMap
+  map?: TeamMap; // Populated when joined
   date: string;
   start_time: string;
   end_time: string;
@@ -69,7 +81,6 @@ export interface Event {
   participants: User[];
   registrations: EventRegistration[];
   created_at: string;
-  field_type: "Mato" | "CQB" | "Misto";
   canceled: boolean;
   deleted?: boolean;
 }

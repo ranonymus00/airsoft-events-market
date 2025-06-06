@@ -1,6 +1,5 @@
 import React from "react";
 import { EventRegistration } from "../../types";
-import { format } from "date-fns";
 import { CheckCircle, XCircle } from "lucide-react";
 import { getStatusDisplay } from "../../utils/events";
 
@@ -40,10 +39,13 @@ const EventRegistrationsList: React.FC<EventRegistrationsListProps> = ({
                 <div className="ml-2">
                   <h4 className="font-medium text-gray-900">
                     {registration.user.username}
+                    {registration.user.team
+                      ? ` - ${registration.user.team.name}`
+                      : ""}
                   </h4>
                   <p className="text-sm text-gray-500">
                     Registered{" "}
-                    {format(new Date(registration.created_at), "MMM d, yyyy")}
+                    {new Date(registration.created_at).toLocaleDateString()}
                     <span className="ml-1">
                       ({registration.number_of_participants} participants)
                     </span>

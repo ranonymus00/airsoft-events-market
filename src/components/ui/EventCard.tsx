@@ -2,7 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Calendar, MapPin, Clock, Users } from "lucide-react";
 import { Event } from "../../types";
-import { format } from "date-fns";
 import Button from "./Button";
 import { getHostData, getParticipants } from "../../utils/events";
 
@@ -11,6 +10,7 @@ interface EventCardProps {
 }
 
 const EventCard: React.FC<EventCardProps> = ({ event }) => {
+  console.log("Rendering EventCard for event:", event);
   return (
     <Link
       to={`/events/${event.id}`}
@@ -45,7 +45,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
         <div className="flex items-center text-gray-600">
           <Calendar className="h-4 w-4 mr-2 text-orange-500" />
           <span className="text-sm">
-            {format(new Date(event.date), "MMMM d, yyyy")}
+            {new Date(event.date).toLocaleDateString()}
           </span>
         </div>
 
@@ -59,7 +59,9 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
         <div className="flex items-center text-gray-600">
           <MapPin className="h-4 w-4 mr-2 text-orange-500" />
           <span className="text-sm truncate">
-            {event.field_type} - {event.location}
+            {event.map
+              ? `${event.map?.name} - ${event.map?.field_type}`
+              : "No map"}
           </span>
         </div>
 

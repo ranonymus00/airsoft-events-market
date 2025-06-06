@@ -1,22 +1,26 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../lib/api";
 import { Event, Team } from "../types";
-import { MarketplaceItem, EventFormData } from "../types/dashboard";
+import { MarketplaceItem } from "../types/dashboard";
 import CreateEventForm from "../components/ui/CreateEventForm";
-import EventRegistrationForm from "../components/ui/EventRegistrationForm";
 import DashboardSidebar from "../components/layout/Dashboard/DashboardSidebar";
 import ProfileTab from "../components/layout/Dashboard/ProfileTab";
 import EventsTab from "../components/layout/Dashboard/EventsTab";
 import MarketplaceTab from "../components/layout/Dashboard/MarketplaceTab";
 import SettingsTab from "../components/layout/Dashboard/SettingsTab";
-import TeamApplications from "../components/layout/Dashboard/TeamTab";
+import TeamTab from "../components/layout/Dashboard/TeamTab";
 
 const Dashboard: React.FC = () => {
   const { authState, updateProfile } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("profile");
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read tab from query param
+  const initialTab = searchParams.get("tab") || "profile";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -33,7 +37,6 @@ const Dashboard: React.FC = () => {
   // State for data from API
   const [userEvents, setUserEvents] = useState<Event[]>([]);
   const [userItems, setUserItems] = useState<MarketplaceItem[]>([]);
-  const [userTeam, setUserTeam] = useState<Team>();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState({
     events: true,
@@ -85,24 +88,11 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const loadUserTeam = async () => {
-    if (!authState?.user?.id) return;
-
-    try {
-      const team = await api.teams.getUserTeam(authState.user.id);
-      setUserTeam(team);
-    } catch (err) {
-      console.error("Error loading user team:", err);
-    } finally {
-      setLoading((prev) => ({ ...prev, teams: false }));
-    }
-  };
-
   useEffect(() => {
     loadUserEvents();
     loadUserItems();
     loadTeams();
-    loadUserTeam();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authState?.user?.id]);
 
   // Redirect if not authenticated
@@ -170,34 +160,6 @@ const Dashboard: React.FC = () => {
     setShowEditEventForm(true);
   };
 
-  const handleEditEventSubmit = async (formData: EventFormData) => {
-    if (!selectedEvent || !authState?.user) return;
-
-    try {
-      const updatedEvent = {
-        title: formData.title,
-        description: formData.description,
-        image: formData.image,
-        location: formData.location,
-        date: formData.date,
-        start_time: formData.start_time,
-        end_time: formData.end_time,
-        rules: formData.rules,
-        max_participants: formData.max_participants,
-        field_type: formData.field_type,
-        user_id: authState?.user?.id,
-      };
-
-      await api.events.update(selectedEvent.id, updatedEvent);
-      await loadUserEvents();
-      setShowEditEventForm(false);
-      setSelectedEvent(null);
-    } catch (err) {
-      console.error("Error updating event:", err);
-      setError("Failed to update event. Please try again.");
-    }
-  };
-
   const handleDeleteEvent = async (eventId: string) => {
     if (!window.confirm("Are you sure you want to delete this event?")) {
       return;
@@ -223,6 +185,23 @@ const Dashboard: React.FC = () => {
       setError("Failed to apply to team. Please try again.");
     }
   };
+
+  // Update tab in URL when changed
+  useEffect(() => {
+    if (activeTab !== searchParams.get("tab")) {
+      setSearchParams({ tab: activeTab });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  // Sync tab with URL if changed externally
+  useEffect(() => {
+    const urlTab = searchParams.get("tab");
+    if (urlTab && urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   if (!authState?.user) {
     return null;
@@ -283,9 +262,9 @@ const Dashboard: React.FC = () => {
             )}
 
             {activeTab === "team" && (
-              <TeamApplications
-                applications={userTeam?.applications}
-                team={userTeam}
+              <TeamTab
+                applications={authState.user.team?.applications}
+                team={authState.user.team || null}
               />
             )}
 
@@ -305,27 +284,17 @@ const Dashboard: React.FC = () => {
       </div>
 
       {showCreateEventForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="max-w-2xl w-full mx-4 overflow-auto h-[90dvh]">
-            <CreateEventForm onClose={() => setShowCreateEventForm(false)} />
-          </div>
-        </div>
+        <CreateEventForm onClose={() => setShowCreateEventForm(false)} />
       )}
 
       {showEditEventForm && selectedEvent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="max-w-2xl w-full mx-4 overflow-auto h-[90dvh]">
-            <EventRegistrationForm
-              onSubmit={handleEditEventSubmit}
-              onCancel={() => {
-                setShowEditEventForm(false);
-                setSelectedEvent(null);
-              }}
-              mode="edit"
-              event={selectedEvent}
-            />
-          </div>
-        </div>
+        <CreateEventForm
+          onClose={() => {
+            setShowEditEventForm(false);
+            setSelectedEvent(null);
+          }}
+          event={selectedEvent}
+        />
       )}
 
       <input

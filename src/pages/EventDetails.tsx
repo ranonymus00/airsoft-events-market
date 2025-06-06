@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   Calendar,
-  MapPin,
   Clock,
   AlertTriangle,
   ChevronLeft,
@@ -15,24 +14,12 @@ import EventRegistrationForm from "../components/ui/EventRegistrationForm";
 import EventRegistrationStatus from "../components/ui/EventRegistrationStatus";
 import EventRegistrationsList from "../components/ui/EventRegistrationsList";
 import { api } from "../lib/api";
-import { Event } from "../types";
+import { Event, TeamMap } from "../types";
 import Button from "../components/ui/Button";
 import { getHostData, getParticipants } from "../utils/events";
 import AdSpace from "../components/ui/AdSpace";
-
-interface EventFormData {
-  title: string;
-  description: string;
-  image: string;
-  location: string;
-  maps_link: string;
-  date: string;
-  start_time: string;
-  end_time: string;
-  rules: string;
-  max_participants: number;
-  field_type: "Mato" | "CQB" | "Misto";
-}
+import CreateEventForm from "../components/ui/CreateEventForm";
+import ImageSlider from "../components/ui/ImageSlider";
 
 const EventDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -59,33 +46,6 @@ const EventDetails: React.FC = () => {
       console.error("Error loading event:", err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleEditSubmit = async (formData: EventFormData) => {
-    if (!event || !authState.user) return;
-
-    try {
-      const updatedEvent = {
-        title: formData.title,
-        description: formData.description,
-        image: formData.image,
-        location: formData.location,
-        maps_link: formData.maps_link,
-        date: formData.date,
-        start_time: formData.start_time,
-        end_time: formData.end_time,
-        rules: formData.rules,
-        max_participants: formData.max_participants,
-        field_type: formData.field_type,
-      };
-
-      const data = await api.events.update(event.id, updatedEvent);
-      setEvent(data);
-      setShowEditForm(false);
-    } catch (err) {
-      console.error("Error updating event:", err);
-      setError("Failed to update event. Please try again.");
     }
   };
 
@@ -167,6 +127,48 @@ const EventDetails: React.FC = () => {
     !userRegistration;
 
   const hostInfo = getHostData(event.user);
+
+  // Map details section
+  const renderMapSection = () => {
+    if (!event?.map) return null;
+    const map: TeamMap = event.map;
+    return (
+      <div className="prose max-w-none mb-8 border-t pt-6 mt-6">
+        <h2 className="text-xl font-bold mb-2">Field Details</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <p>
+              <span className="font-semibold">Name:</span> {map.name}
+            </p>
+            <p>
+              <span className="font-semibold">Field Type:</span>{" "}
+              {map.field_type}
+            </p>
+            <p>
+              <span className="font-semibold">Location:</span>
+              <a
+                href={map.google_maps_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline"
+              >
+                {map.location}
+              </a>
+            </p>
+            <p>
+              <span className="font-semibold">Description:</span>{" "}
+              {map.description}
+            </p>
+          </div>
+          {map.photos && map.photos.length > 0 && (
+            <div>
+              <ImageSlider images={map.photos} />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -253,24 +255,7 @@ const EventDetails: React.FC = () => {
                     {event.start_time} - {event.end_time}
                   </span>
                 </div>
-                {event.maps_link ? (
-                  <a
-                    href={event.maps_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-2"
-                  >
-                    <span className="flex items-center text-gray-600 hover:text-orange-500">
-                      <MapPin className="h-5 w-5 mr-2 text-orange-500" />
-                      <span>{event.location}</span>
-                    </span>
-                  </a>
-                ) : (
-                  <span className="flex items-center text-gray-600">
-                    <MapPin className="h-5 w-5 mr-2 text-orange-500" />
-                    <span>{event.location}</span>
-                  </span>
-                )}
+                {/* Map location and link removed, now shown in map section below */}
               </div>
 
               <div className="prose max-w-none mb-8">
@@ -282,6 +267,8 @@ const EventDetails: React.FC = () => {
                 <h2 className="text-xl font-bold mb-2">Rules</h2>
                 <p className="text-gray-600">{event.rules}</p>
               </div>
+
+              {renderMapSection()}
 
               <div className="border-t border-gray-100 pt-6">
                 <div className="flex justify-between items-center mb-4">
@@ -335,12 +322,7 @@ const EventDetails: React.FC = () => {
       )}
 
       {showEditForm && (
-        <EventRegistrationForm
-          onSubmit={handleEditSubmit}
-          onCancel={() => setShowEditForm(false)}
-          mode="edit"
-          event={event}
-        />
+        <CreateEventForm onClose={() => setShowEditForm(false)} event={event} />
       )}
     </div>
   );

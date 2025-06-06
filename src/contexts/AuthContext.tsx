@@ -80,7 +80,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         .select(
           `
           *,
-          team:team_members(
+          team:team_members!user_id(
             team:teams(
               id,
               name,
@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       setAuthState({
         user: {
           ...user,
-          team: user.team?.[0]?.team || null,
+          team: user.team?.team || null,
         },
         isAuthenticated: true,
         loading: false,

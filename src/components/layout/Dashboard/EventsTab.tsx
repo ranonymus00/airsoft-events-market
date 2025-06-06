@@ -1,10 +1,17 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { PlusCircle, Edit, Trash2, Calendar, User, ChevronRight } from "lucide-react";
+import {
+  PlusCircle,
+  Edit,
+  Trash2,
+  Calendar,
+  User,
+  ChevronRight,
+} from "lucide-react";
 import { Event } from "../../../types";
 import Button from "../../ui/Button";
 import EmptySection from "../../ui/EmptySection";
-import { getParticipants } from "../../../utils/events";
+import { getHostData, getParticipants } from "../../../utils/events";
 import Section from "../../ui/Section";
 import Card from "../../ui/Card";
 import Spinner from "../../ui/Spinner";
@@ -59,7 +66,7 @@ const EventsTab: React.FC<EventsTabProps> = ({
                         {event.title}
                       </h3>
                       <p className="text-gray-500 text-sm">
-                        Team: {event.user?.username || event.user?.team?.name}
+                        Hosted by: {getHostData(event.user).name}
                       </p>
                     </div>
 
@@ -82,9 +89,7 @@ const EventsTab: React.FC<EventsTabProps> = ({
                   <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
                     <div className="flex items-center text-gray-600">
                       <Calendar className="h-4 w-4 mr-1 text-orange-500" />
-                      <span>
-                        {new Date(event.date).toLocaleDateString()}
-                      </span>
+                      <span>{new Date(event.date).toLocaleDateString()}</span>
                     </div>
 
                     <div className="flex items-center text-gray-600">

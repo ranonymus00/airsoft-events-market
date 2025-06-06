@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { Team, Event } from "../types";
+import { Team, Event, TeamMap } from "../types";
 
 export const api = {
   events: {
@@ -10,39 +10,39 @@ export const api = {
           `
           *,
           user:users!events_user_id_fkey(
-            id,
             username,
             avatar,
-            team:teams->team_members(
-              id,
-              name,
-              logo
-            )
-          ),
-          registrations:event_registrations!event_registrations_event_id_fkey(
-            id,
-            status,
-            message,
-            proof_image,
-            created_at,
-            number_of_participants,
-            user:users!event_registrations_user_id_fkey(
-              id,
-              username,
-              avatar,
-              team:teams->team_members(
+            team:team_members!user_id(
+              team:teams(
                 id,
                 name,
                 logo
               )
             )
+          ),
+          map:team_maps!map_id(
+            name,
+            field_type
+          ),
+          registrations:event_registrations!event_registrations_event_id_fkey(
+            id,
+            status
           )
         `
         )
         .order("date", { ascending: true });
 
       if (error) throw error;
-      return data;
+
+      const events = data.map((event) => ({
+        ...event,
+        user: {
+          ...event.user,
+          team: event.user?.team?.team || null,
+        },
+      }));
+
+      return events;
     },
 
     async getById(id: string) {
@@ -51,14 +51,16 @@ export const api = {
         .select(
           `
           *,
+          map:team_maps!map_id(*),
           user:users!events_user_id_fkey(
-            id,
             username,
             avatar,
-            team:teams!team_members(
-              id,
-              name,
-              logo
+            team:team_members!user_id(
+              team:teams(
+                id,
+                name,
+                logo
+              )
             )
           ),
           registrations:event_registrations!event_registrations_event_id_fkey(
@@ -69,13 +71,14 @@ export const api = {
             created_at,
             number_of_participants,
             user:users!event_registrations_user_id_fkey(
-              id,
               username,
               avatar,
-              team:teams!team_members(
-                id,
-                name,
-                logo
+              team:team_members!user_id(
+                team:teams(
+                  id,
+                  name,
+                  logo
+                )
               )
             )
           )
@@ -85,7 +88,27 @@ export const api = {
         .single();
 
       if (error) throw error;
-      return data;
+
+      const registrations =
+        data.registrations &&
+        data.registrations.map((registration) => ({
+          ...registration,
+          user: {
+            ...registration.user,
+            team: registration.user?.team?.team || null,
+          },
+        }));
+
+      const event = {
+        ...data,
+        user: {
+          ...data.user,
+          team: data.user?.team?.team || null,
+        },
+        registrations: registrations,
+      };
+
+      return event;
     },
 
     async register(
@@ -325,7 +348,8 @@ export const api = {
       // Get the complete team data with all relationships
       const { data, error } = await supabase
         .from("teams")
-        .select(`
+        .select(
+          `
           *,
           users!teams_owner_id_fkey(
             id,
@@ -356,7 +380,8 @@ export const api = {
               avatar
             )
           )
-        `)
+        `
+        )
         .eq("id", newTeam.id)
         .single();
 
@@ -447,6 +472,41 @@ export const api = {
         .from("team_applications")
         .update({ status: "rejected" })
         .eq("id", applicationId);
+      if (error) throw error;
+    },
+  },
+
+  teamMaps: {
+    async getByTeam(teamId: string) {
+      const { data, error } = await supabase
+        .from("team_maps")
+        .select("*")
+        .eq("team_id", teamId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    async create(map: Partial<TeamMap>) {
+      const { data, error } = await supabase
+        .from("team_maps")
+        .insert([map])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    async update(id: string, map: Partial<TeamMap>) {
+      const { data, error } = await supabase
+        .from("team_maps")
+        .update(map)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    async delete(id: string) {
+      const { error } = await supabase.from("team_maps").delete().eq("id", id);
       if (error) throw error;
     },
   },
