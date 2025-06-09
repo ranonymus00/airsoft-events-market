@@ -8,9 +8,41 @@ import {
   transformTeamData,
 } from "../utils/dataTransformers";
 
+// Cache to prevent duplicate API calls
+const apiCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 30000; // 30 seconds
+
+const getCacheKey = (endpoint: string, params?: any) => {
+  return `${endpoint}_${JSON.stringify(params || {})}`;
+};
+
+const getCachedData = (key: string) => {
+  const cached = apiCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+  return null;
+};
+
+const setCachedData = (key: string, data: any) => {
+  apiCache.set(key, { data, timestamp: Date.now() });
+};
+
+const clearCacheByPattern = (pattern: string) => {
+  for (const key of apiCache.keys()) {
+    if (key.includes(pattern)) {
+      apiCache.delete(key);
+    }
+  }
+};
+
 export const api = {
   events: {
     async getAll() {
+      const cacheKey = getCacheKey('events_getAll');
+      const cached = getCachedData(cacheKey);
+      if (cached) return cached;
+
       const { data, error } = await supabase
         .from("events")
         .select(
@@ -40,10 +72,16 @@ export const api = {
         .order("date", { ascending: true });
 
       if (error) throw error;
-      return transformEventsData(data);
+      const transformedData = transformEventsData(data);
+      setCachedData(cacheKey, transformedData);
+      return transformedData;
     },
 
     async getById(id: string) {
+      const cacheKey = getCacheKey('events_getById', { id });
+      const cached = getCachedData(cacheKey);
+      if (cached) return cached;
+
       const { data, error } = await supabase
         .from("events")
         .select(
@@ -87,7 +125,9 @@ export const api = {
         .single();
 
       if (error) throw error;
-      return transformEventData(data);
+      const transformedData = transformEventData(data);
+      setCachedData(cacheKey, transformedData);
+      return transformedData;
     },
 
     async register(
@@ -139,6 +179,10 @@ export const api = {
         .single();
 
       if (error) throw error;
+      
+      // Clear event cache to refresh data
+      clearCacheByPattern('events_');
+      
       return data;
     },
 
@@ -154,6 +198,10 @@ export const api = {
         .single();
 
       if (error) throw error;
+      
+      // Clear event cache to refresh data
+      clearCacheByPattern('events_');
+      
       return data;
     },
 
@@ -210,12 +258,19 @@ export const api = {
         );
       }
 
+      // Clear event cache to refresh data
+      clearCacheByPattern('events_');
+
       return transformEventData(data[0]);
     },
   },
 
   marketplace: {
     async getAll() {
+      const cacheKey = getCacheKey('marketplace_getAll');
+      const cached = getCachedData(cacheKey);
+      if (cached) return cached;
+
       const { data, error } = await supabase
         .from("marketplace_items")
         .select(
@@ -227,10 +282,15 @@ export const api = {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+      setCachedData(cacheKey, data);
       return data;
     },
 
     async getById(id: string) {
+      const cacheKey = getCacheKey('marketplace_getById', { id });
+      const cached = getCachedData(cacheKey);
+      if (cached) return cached;
+
       const { data, error } = await supabase
         .from("marketplace_items")
         .select(
@@ -243,12 +303,17 @@ export const api = {
         .single();
 
       if (error) throw error;
+      setCachedData(cacheKey, data);
       return data;
     },
   },
 
   teams: {
     getAll: async (): Promise<Team[]> => {
+      const cacheKey = getCacheKey('teams_getAll');
+      const cached = getCachedData(cacheKey);
+      if (cached) return cached;
+
       const { data, error } = await supabase.from("teams").select(`
           *,
           users!teams_owner_id_fkey(
@@ -281,10 +346,16 @@ export const api = {
           )
         `);
       if (error) throw error;
-      return transformTeamsData(data);
+      const transformedData = transformTeamsData(data);
+      setCachedData(cacheKey, transformedData);
+      return transformedData;
     },
 
     getUserTeam: async (userId: string): Promise<Team> => {
+      const cacheKey = getCacheKey('teams_getUserTeam', { userId });
+      const cached = getCachedData(cacheKey);
+      if (cached) return cached;
+
       const { data, error } = await supabase
         .from("teams")
         .select(
@@ -316,7 +387,9 @@ export const api = {
         .eq("owner_id", userId)
         .single();
       if (error) throw error;
-      return transformTeamData(data);
+      const transformedData = transformTeamData(data);
+      setCachedData(cacheKey, transformedData);
+      return transformedData;
     },
 
     create: async (team: Partial<Team>): Promise<Team> => {
@@ -381,6 +454,10 @@ export const api = {
         .single();
 
       if (error) throw error;
+      
+      // Clear teams cache
+      clearCacheByPattern('teams_');
+      
       return transformTeamData(data);
     },
 
@@ -424,6 +501,10 @@ export const api = {
         )
         .single();
       if (error) throw error;
+      
+      // Clear teams cache
+      clearCacheByPattern('teams_');
+      
       return transformTeamData(data);
     },
 
@@ -435,6 +516,9 @@ export const api = {
         },
       ]);
       if (error) throw error;
+      
+      // Clear teams cache
+      clearCacheByPattern('teams_');
     },
 
     approveApplication: async (applicationId: string): Promise<void> => {
@@ -464,6 +548,9 @@ export const api = {
         ]);
 
       if (memberError) throw memberError;
+      
+      // Clear teams cache
+      clearCacheByPattern('teams_');
     },
 
     rejectApplication: async (applicationId: string): Promise<void> => {
@@ -472,19 +559,29 @@ export const api = {
         .update({ status: "rejected" })
         .eq("id", applicationId);
       if (error) throw error;
+      
+      // Clear teams cache
+      clearCacheByPattern('teams_');
     },
   },
 
   teamMaps: {
     async getByTeam(teamId: string) {
+      const cacheKey = getCacheKey('teamMaps_getByTeam', { teamId });
+      const cached = getCachedData(cacheKey);
+      if (cached) return cached;
+
       const { data, error } = await supabase
         .from("team_maps")
         .select("*")
         .eq("team_id", teamId)
         .order("created_at", { ascending: false });
       if (error) throw error;
+      
+      setCachedData(cacheKey, data);
       return data;
     },
+    
     async create(map: Partial<TeamMap>) {
       const { data, error } = await supabase
         .from("team_maps")
@@ -492,8 +589,13 @@ export const api = {
         .select()
         .single();
       if (error) throw error;
+      
+      // Clear team maps cache
+      clearCacheByPattern('teamMaps_');
+      
       return data;
     },
+    
     async update(id: string, map: Partial<TeamMap>) {
       const { data, error } = await supabase
         .from("team_maps")
@@ -502,11 +604,19 @@ export const api = {
         .select()
         .single();
       if (error) throw error;
+      
+      // Clear team maps cache
+      clearCacheByPattern('teamMaps_');
+      
       return data;
     },
+    
     async delete(id: string) {
       const { error } = await supabase.from("team_maps").delete().eq("id", id);
       if (error) throw error;
+      
+      // Clear team maps cache
+      clearCacheByPattern('teamMaps_');
     },
   },
 };

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Check, X, AlertCircle, Users, AlertTriangle } from "lucide-react";
 import { api } from "../../../lib/api";
 import { TeamApplication, Team, TeamMap } from "../../../types";
@@ -15,21 +15,25 @@ interface TeamTabProps {
 }
 
 const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
-
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
     "applications" | "settings" | "maps"
   >("settings");
-  const [formData, setFormData] = useState({
-    logo: team?.logo,
-    name: team?.name,
-    description: team?.description,
-    play_style: team?.play_style,
-  });
+  
+  // Memoize initial form data to prevent unnecessary re-renders
+  const initialFormData = useMemo(() => ({
+    logo: team?.logo || "",
+    name: team?.name || "",
+    description: team?.description || "",
+    play_style: team?.play_style || "",
+  }), [team?.logo, team?.name, team?.description, team?.play_style]);
+
+  const [formData, setFormData] = useState(initialFormData);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [error, setError] = useState<string>("");
   const [maps, setMaps] = useState<TeamMap[]>([]);
   const [loadingMaps, setLoadingMaps] = useState(false);
+  const [mapsLoaded, setMapsLoaded] = useState(false);
   const [mapModal, setMapModal] = useState<{
     open: boolean;
     map?: TeamMap | null;
@@ -38,18 +42,36 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
     map: null,
   });
 
+  // Update form data when team changes
   React.useEffect(() => {
-    if (team && activeTab === "maps") {
-      setLoadingMaps(true);
-      api.teamMaps
-        .getByTeam(team.id)
-        .then(setMaps)
-        .catch(() => setMaps([]))
-        .finally(() => setLoadingMaps(false));
-    }
-  }, [team, activeTab]);
+    setFormData(initialFormData);
+  }, [initialFormData]);
 
-  const handleInputChange = (
+  // Load maps only when needed and prevent duplicate calls
+  const loadMaps = useCallback(async () => {
+    if (!team?.id || loadingMaps || mapsLoaded) return;
+    
+    setLoadingMaps(true);
+    try {
+      const teamMaps = await api.teamMaps.getByTeam(team.id);
+      setMaps(teamMaps);
+      setMapsLoaded(true);
+    } catch (err) {
+      console.error("Error loading maps:", err);
+      setMaps([]);
+    } finally {
+      setLoadingMaps(false);
+    }
+  }, [team?.id, loadingMaps, mapsLoaded]);
+
+  // Load maps when switching to maps tab
+  React.useEffect(() => {
+    if (activeTab === "maps" && team?.id && !mapsLoaded) {
+      loadMaps();
+    }
+  }, [activeTab, team?.id, mapsLoaded, loadMaps]);
+
+  const handleInputChange = useCallback((
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
@@ -59,50 +81,53 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
       ...prev,
       [name]: value,
     }));
-  };
+  }, []);
 
-  const handleApproveApplication = async (applicationId: string) => {
+  const handleApproveApplication = useCallback(async (applicationId: string) => {
     try {
       await api.teams.approveApplication(applicationId);
+      // Note: Parent component should handle refreshing applications
     } catch (err) {
       console.error("Error approving application:", err);
       setError("Failed to approve application. Please try again.");
     }
-  };
+  }, []);
 
-  const handleRejectApplication = async (applicationId: string) => {
+  const handleRejectApplication = useCallback(async (applicationId: string) => {
     try {
       await api.teams.rejectApplication(applicationId);
+      // Note: Parent component should handle refreshing applications
     } catch (err) {
       console.error("Error rejecting application:", err);
       setError("Failed to reject application. Please try again.");
     }
-  };
+  }, []);
 
-  const handleTeamUpdate = async (teamData: Partial<Team>) => {
+  const handleTeamUpdate = useCallback(async (teamData: Partial<Team>) => {
     if (!team?.id) return;
 
     try {
       await api.teams.update(team.id, teamData);
+      // Note: Parent component should handle refreshing team data
     } catch (err) {
       console.error("Error updating team:", err);
       setError("Failed to update team. Please try again.");
     }
-  };
+  }, [team?.id]);
 
-  const handleDeleteMap = async (id: string) => {
+  const handleDeleteMap = useCallback(async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this map?")) return;
     try {
       await api.teamMaps.delete(id);
       setMaps((prev) => prev.filter((m) => m.id !== id));
     } catch (err) {
-      console.log("Error deleting map:", err);
+      console.error("Error deleting map:", err);
       setError("Failed to delete map. Please try again.");
     }
-  };
+  }, []);
 
   // Map modal for add/edit
-  const handleMapModalSave = async (form: Partial<TeamMap>, mapPhotoFiles: File[]) => {
+  const handleMapModalSave = useCallback(async (form: Partial<TeamMap>, mapPhotoFiles: File[]) => {
     try {
       let photoUrls = form.photos || [];
       if (mapPhotoFiles && mapPhotoFiles.length > 0) {
@@ -128,15 +153,15 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
     } catch {
       setError("Failed to save map. Please try again.");
     }
-  };
+  }, [mapModal.map, team?.id]);
 
-
-  const MapModal: React.FC = () => {
+  const MapModal: React.FC = React.memo(() => {
     const editing = !!mapModal.map;
     const [form, setForm] = React.useState<Partial<TeamMap>>(
       mapModal.map || {}
     );
     const [mapPhotoFiles, setMapPhotoFiles] = React.useState<File[]>([]);
+    
     return !mapModal.open ? null : (
       <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg h-[90dvh] overflow-y-auto">
@@ -241,7 +266,7 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
         </div>
       </div>
     );
-  };
+  });
 
   const renderApplications = () => {
     if (!applications || applications.length === 0) {
@@ -427,12 +452,18 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
 
   const renderMaps = () => {
     if (loadingMaps) {
-      return <div className="p-6 text-center">Loading maps...</div>;
+      return (
+        <div className="p-6 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading maps...</p>
+        </div>
+      );
     }
+    
     if (!maps.length) {
       return (
         <EmptySection
-          icon={<Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />} // You can use a map icon if available
+          icon={<Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />}
           title="No maps yet"
           description="Your team hasn't added any maps yet."
           buttonText="Add Map"
@@ -440,6 +471,7 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
         />
       );
     }
+    
     return (
       <div className="p-4">
         <div className="flex justify-end mb-4">
@@ -520,7 +552,7 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab("settings")}
-                className={`$${
+                className={`${
                   activeTab === "settings"
                     ? "border-orange-500 text-orange-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -530,7 +562,7 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
               </button>
               <button
                 onClick={() => setActiveTab("applications")}
-                className={`$${
+                className={`${
                   activeTab === "applications"
                     ? "border-orange-500 text-orange-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -540,7 +572,7 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
               </button>
               <button
                 onClick={() => setActiveTab("maps")}
-                className={`$${
+                className={`${
                   activeTab === "maps"
                     ? "border-orange-500 text-orange-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
