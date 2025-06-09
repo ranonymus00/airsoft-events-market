@@ -110,19 +110,32 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
             </label>
             <FileUpload
               accept="image/*"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  const imageUrl = URL.createObjectURL(file);
-                  setFormData((prev) => ({
-                    ...prev,
-                    proofImage: imageUrl,
-                  }));
+                  try {
+                    const url = await import("../../lib/upload").then((m) =>
+                      m.uploadToSupabase(file, "event-registration-proof")
+                    );
+                    setFormData((prev) => ({
+                      ...prev,
+                      proofImage: url,
+                    }));
+                  } catch {
+                    // Optionally handle error
+                  }
                 }
               }}
               className="w-full p-2 border border-gray-300 rounded-md"
               required
             />
+            {formData.proofImage && (
+              <img
+                src={formData.proofImage}
+                alt="Proof Preview"
+                className="mx-auto mt-2 w-32 h-32 object-cover rounded border"
+              />
+            )}
             <p className="mt-1 text-sm text-gray-500">
               Upload a photo of your equipment or previous event participation
             </p>

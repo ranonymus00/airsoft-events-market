@@ -3,7 +3,7 @@ import React from "react";
 interface AvatarUploadProps {
   src: string;
   alt?: string;
-  onChange: (file: File) => void;
+  onChange: (url: string) => void;
   className?: string;
 }
 
@@ -14,10 +14,15 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ src, alt = "Avatar", onChan
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      onChange(file);
+      try {
+        const url = await import("../../lib/upload").then(m => m.uploadToSupabase(file, "avatars"));
+        onChange(url);
+      } catch {
+        // Optionally handle error
+      }
     }
   };
 

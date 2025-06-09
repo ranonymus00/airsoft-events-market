@@ -126,17 +126,21 @@ const CreateTeam: React.FC = () => {
                         <FileUpload
                           label={undefined}
                           accept="image/*"
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => {
+                              try {
+                                // Upload to Supabase Storage and get public URL
+                                const url = await import("../lib/upload").then(
+                                  (m) => m.uploadToSupabase(file, "team-logos")
+                                );
                                 setFormData((prev) => ({
                                   ...prev,
-                                  logo: reader.result as string,
+                                  logo: url,
                                 }));
-                              };
-                              reader.readAsDataURL(file);
+                              } catch {
+                                setError("Failed to upload logo. Please try again.");
+                              }
                             }
                           }}
                           className="sr-only"
@@ -145,6 +149,13 @@ const CreateTeam: React.FC = () => {
                       <p className="text-xs text-gray-500">
                         PNG, JPG, GIF up to 10MB
                       </p>
+                      {formData.logo && (
+                        <img
+                          src={formData.logo}
+                          alt="Team Logo Preview"
+                          className="mx-auto mt-2 w-24 h-24 object-cover rounded-full border"
+                        />
+                      )}
                     </div>
                   </div>
                 </div>

@@ -168,21 +168,31 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
         <FileUpload
           label="Event Image"
           accept="image/*"
-          onChange={(e) => {
+          onChange={async (e) => {
             const file = e.target.files?.[0];
             if (file) {
-              const reader = new FileReader();
-              reader.onloadend = () => {
+              try {
+                const url = await import("../../lib/upload").then((m) =>
+                  m.uploadToSupabase(file, "event-images")
+                );
                 setFormData((prev) => ({
                   ...prev,
-                  image: reader.result as string,
+                  image: url,
                 }));
-              };
-              reader.readAsDataURL(file);
+              } catch {
+                alert("Failed to upload image. Please try again.");
+              }
             }
           }}
           required
         />
+        {formData.image && (
+          <img
+            src={formData.image}
+            alt="Event Preview"
+            className="mx-auto mt-2 w-32 h-32 object-cover rounded border"
+          />
+        )}
 
         <TextareaInput
           label="Rules"

@@ -181,11 +181,21 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
             <FileUpload
               multiple
               accept="image/*"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const files = Array.from(e.target.files || []);
-                // For demo: use local URLs. In production, upload to storage and save URLs.
-                const urls = files.map((file) => URL.createObjectURL(file));
-                setForm((f) => ({ ...f, photos: urls }));
+                if (files.length > 0) {
+                  try {
+                    const uploadModule = await import("../../../lib/upload");
+                    const urls = await Promise.all(
+                      files.map((file) =>
+                        uploadModule.uploadToSupabase(file, "map-photos")
+                      )
+                    );
+                    setForm((f) => ({ ...f, photos: urls }));
+                  } catch {
+                    setError("Failed to upload map photos. Please try again.");
+                  }
+                }
               }}
               className="w-full p-2 border rounded"
             />
