@@ -9,6 +9,7 @@ import TextInput from "./TextInput";
 import TextareaInput from "./TextareaInput";
 import SelectInput from "./SelectInput";
 import FileUpload from "./FileUpload";
+import { useFileUpload } from "../../hooks/useFileUpload";
 
 interface CreateEventFormProps {
   onClose: () => void;
@@ -33,6 +34,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     max_participants: event?.max_participants || 20,
   });
   const [teamMaps, setTeamMaps] = useState<{ id: string; name: string }[]>([]);
+  const { uploadFiles, isUploading, uploadError } = useFileUpload();
 
   useEffect(() => {
     if (authState.user?.team?.id) {
@@ -172,12 +174,10 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
             const file = e.target.files?.[0];
             if (file) {
               try {
-                const url = await import("../../lib/upload").then((m) =>
-                  m.uploadToSupabase(file, "event-images")
-                );
+                const urls = await uploadFiles([file], "event-images", "events");
                 setFormData((prev) => ({
                   ...prev,
-                  image: url,
+                  image: urls[0],
                 }));
               } catch {
                 alert("Failed to upload image. Please try again.");
@@ -185,7 +185,10 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
             }
           }}
           required
+          disabled={isUploading}
         />
+        {isUploading && <p>Uploading...</p>}
+        {uploadError && <p style={{ color: "red" }}>{uploadError.message}</p>}
         {formData.image && (
           <img
             src={formData.image}

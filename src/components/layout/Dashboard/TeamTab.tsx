@@ -6,6 +6,7 @@ import Button from "../../ui/Button";
 import EmptySection from "../../ui/EmptySection";
 import { useNavigate } from "react-router-dom";
 import FileUpload from "../../ui/FileUpload";
+import { useFileUpload } from "../../../hooks/useFileUpload";
 
 interface TeamTabProps {
   applications: TeamApplication[] | undefined;
@@ -13,6 +14,7 @@ interface TeamTabProps {
 }
 
 const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
+  const { uploadFiles, isUploading, uploadError } = useFileUpload();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
     "applications" | "settings" | "maps"
@@ -185,12 +187,7 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
                 const files = Array.from(e.target.files || []);
                 if (files.length > 0) {
                   try {
-                    const uploadModule = await import("../../../lib/upload");
-                    const urls = await Promise.all(
-                      files.map((file) =>
-                        uploadModule.uploadToSupabase(file, "map-photos")
-                      )
-                    );
+                    const urls = await uploadFiles(files, "map-photos", "maps");
                     setForm((f) => ({ ...f, photos: urls }));
                   } catch {
                     setError("Failed to upload map photos. Please try again.");
@@ -199,6 +196,12 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
               }}
               className="w-full p-2 border rounded"
             />
+            {isUploading && (
+              <p className="text-orange-500 text-xs mt-2">Uploading map photos...</p>
+            )}
+            {uploadError && (
+              <p className="text-red-500 text-xs mt-2">{uploadError}</p>
+            )}
             {form.photos && form.photos.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {form.photos.map((url, idx) => (

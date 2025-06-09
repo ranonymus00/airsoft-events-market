@@ -1,0 +1,111 @@
+Airsoft Events & Marketplace - LLM Developer Guidelines
+
+Code Style:
+- Use meaningful variable and function names.
+- Keep functions small and focused.
+- Use consistent 2-space indentation.
+- Follow ESLint and Prettier configurations.
+- Use TypeScript for type safety.
+
+File Organization:
+- Group related files by feature.
+- Place components in src/components.
+- Place pages in src/pages.
+- Place utilities in src/utils.
+- Place types in src/types.
+
+Naming Conventions:
+- Use PascalCase for components.
+- Use camelCase for variables and functions.
+- Use UPPER_CASE for constants.
+- Use kebab-case for file names.
+
+TypeScript Guidelines:
+- Define interfaces for all data structures.
+- Use type aliases for complex types.
+- Avoid using 'any' type.
+- Use generics when appropriate.
+- Enable strict mode.
+- Use type inference when possible.
+- Document complex types.
+- Use union types for variants.
+- Use optional properties with '?'.
+
+Component Patterns:
+- Use functional components.
+- Specify prop types.
+- Use React hooks effectively.
+- Follow single responsibility principle.
+- Use local state for component-specific data.
+- Use context for global state.
+- Handle side effects with useEffect.
+- Prefer composition over inheritance.
+- Create reusable components.
+- Minimize prop drilling.
+
+Data Fetching:
+- Use the provided API client.
+- Handle loading and error states.
+- Cache responses when appropriate.
+- Use React Query for server state.
+- Implement data mutations and optimistic updates.
+
+Error Handling:
+- Implement error boundaries.
+- Provide fallback UI for errors.
+- Log errors appropriately.
+- Use user-friendly error messages.
+- Handle network errors and provide recovery options.
+
+Form Generation:
+- Use controlled components for forms.
+- Use Zod for schema validation.
+- Implement both client-side and server-side validation.
+- Show validation errors clearly.
+
+Layout Guidelines:
+- Use a mobile-first approach.
+- Implement responsive breakpoints.
+- Use flexbox and grid for layout.
+- Ensure consistent spacing and alignment.
+
+Navigation:
+- Use React Router for routing.
+- Implement proper route handling and navigation state.
+- Create reusable navigation components.
+
+Performance:
+- Implement code splitting and lazy loading.
+- Optimize images and minimize bundle size.
+- Monitor performance metrics and optimize re-renders.
+
+Styling:
+- Use Tailwind CSS.
+- Follow BEM naming where applicable.
+- Use CSS variables and implement themes.
+- Support dark mode.
+
+Testing:
+- Write unit and integration tests.
+- Use Jest and Testing Library.
+- Implement proper mocks.
+- Organize tests clearly and write meaningful test cases.
+
+Theme Customization:
+- Use design tokens and CSS variables.
+- Implement theme switching and consistent color usage.
+- Support theme variants and proper typography.
+
+Accessibility:
+- Follow WCAG guidelines.
+- Use semantic HTML and ARIA attributes.
+- Support keyboard navigation.
+- Test with screen readers and check color contrast.
+
+Documentation:
+- Write meaningful comments and JSDoc where needed.
+- Keep README and changelog updated.
+- Document setup process and API endpoints.
+
+Custom Components:
+- For all text input fields, use the custom TextInput component from src/components/ui/TextInput.tsx. This component supports label, error, and containerClassName props, and applies consistent Tailwind styling. Do not use raw input elements for text fields in new layouts.

@@ -1,4 +1,11 @@
-import { User, Team, Event, TeamMember, TeamApplication, EventRegistration } from "../types";
+import {
+  User,
+  Team,
+  Event,
+  TeamMember,
+  TeamApplication,
+  EventRegistration,
+} from "../types";
 
 /**
  * Transforms nested team data from Supabase queries
@@ -6,10 +13,9 @@ import { User, Team, Event, TeamMember, TeamApplication, EventRegistration } fro
  */
 export const transformUserTeam = (user: User): User => {
   if (!user) return user;
-
   return {
     ...user,
-    team: user.team?.team || null,
+    team: user.team ?? null,
   };
 };
 
@@ -23,14 +29,12 @@ export const transformUsersWithTeams = (users: User[]): User[] => {
 /**
  * Transforms event data with nested user and team information
  */
-export const transformEventData = (event: Event) => {
+export const transformEventData = (event: Event): Event => {
   if (!event) return event;
-
-  const transformedEvent = {
+  const transformedEvent: Event = {
     ...event,
     user: transformUserTeam(event.user),
   };
-
   // Transform registrations if they exist
   if (event.registrations) {
     transformedEvent.registrations = event.registrations.map(
@@ -40,15 +44,14 @@ export const transformEventData = (event: Event) => {
       })
     );
   }
-
   return transformedEvent;
 };
 
 /**
  * Transforms an array of events with nested data
  */
-export const transformEventsData = (events: Event[]) => {
-  return events.map(transformEventData);
+export const transformEventsData = (events: Event[]): Event[] => {
+  return events.map(transformEventData).filter(Boolean) as Event[];
 };
 
 /**
@@ -62,12 +65,12 @@ export const transformTeamData = (team: Team): Team => {
       team.team_members?.map((member: TeamMember) => ({
         ...member,
         user: transformUserTeam(member.user),
-      })) || [],
+      })) ?? [],
     team_applications:
       team.team_applications?.map((application: TeamApplication) => ({
         ...application,
         user: transformUserTeam(application.user),
-      })) || [],
+      })) ?? [],
   };
 };
 

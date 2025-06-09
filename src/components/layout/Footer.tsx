@@ -1,7 +1,11 @@
-import React from 'react';
+import React from 'react'; // Footer component
 import { Link } from 'react-router-dom';
 import { Calendar, Facebook, Instagram, Twitter } from 'lucide-react';
 
+/**
+ * Footer component with branding, navigation, resources, and contact info.
+ * Social links include aria-labels for accessibility.
+ */
 const Footer: React.FC = () => {
   return (
     <footer className="bg-slate-900 text-white py-10 mt-10">
@@ -17,13 +21,13 @@ const Footer: React.FC = () => {
               join events, and find the perfect equipment for your next game.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">
+              <a href="#" aria-label="Facebook" className="text-gray-400 hover:text-white transition-colors duration-200">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">
+              <a href="#" aria-label="Twitter" className="text-gray-400 hover:text-white transition-colors duration-200">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">
+              <a href="#" aria-label="Instagram" className="text-gray-400 hover:text-white transition-colors duration-200">
                 <Instagram className="h-5 w-5" />
               </a>
             </div>
@@ -59,6 +63,7 @@ const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4">Resources</h3>
             <ul className="space-y-2">
               <li>
+                {/* TODO: Replace '#' with actual resource links */}
                 <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">
                   Airsoft Safety Guidelines
                 </a>

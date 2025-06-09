@@ -1,4 +1,5 @@
 import React from "react";
+import { useFileUpload } from "../../hooks/useFileUpload";
 
 interface AvatarUploadProps {
   src: string;
@@ -14,17 +15,20 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ src, alt = "Avatar", onChan
     fileInputRef.current?.click();
   };
 
+  const { uploadFiles, isUploading, uploadError } = useFileUpload();
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const url = await import("../../lib/upload").then(m => m.uploadToSupabase(file, "avatars"));
-        onChange(url);
+        const urls = await uploadFiles([file], "avatars", "avatars");
+        onChange(urls[0]);
       } catch {
         // Optionally handle error
       }
     }
   };
+// Optionally, show loading/error UI in the component body
 
   return (
     <div className={`relative inline-block ${className}`}>

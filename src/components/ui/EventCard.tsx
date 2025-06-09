@@ -9,7 +9,11 @@ interface EventCardProps {
   event: Event;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event }) => {
+/**
+ * Card component for displaying a summary of an event.
+ * Optimized with React.memo for performance.
+ */
+const EventCard: React.FC<EventCardProps> = React.memo(({ event }) => {
   return (
     <Link
       to={`/events/${event.id}`}
@@ -27,7 +31,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
       <div className="relative">
         <img
           src={event.image}
-          alt={event.title}
+          alt={event.title || "Event image"}
           className="w-full h-48 object-cover"
         />
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
@@ -72,13 +76,18 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
         </div>
 
         <div className="mt-4 pt-4 border-t border-gray-100">
-          <Button size="small" className="w-full">
+          {/* Button is for navigation, so ensure semantics are clear */}
+          <Button
+            size="small"
+            className="w-full"
+            aria-label="View event details"
+          >
             View Details
           </Button>
         </div>
       </div>
     </Link>
   );
-};
+});
 
 export default EventCard;

@@ -1,3 +1,6 @@
+/**
+ * Button component for consistent UI actions
+ */
 interface ButtonProps {
   variant?: "primary" | "secondary" | "cancel" | "link";
   title?: string;
@@ -8,7 +11,7 @@ interface ButtonProps {
   disabled?: boolean;
   className?: string;
   onClick?: () => void;
-  children: React.ReactElement | string;
+  children: React.ReactNode;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -55,7 +58,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       className={`flex items-center justify-center gap-2 ${getButtonStyle()} ${getButtonSize()} rounded-md font-bold transition-colors duration-200 ${className}`}
       disabled={disabled}
-      onClick={() => onClick && onClick()}
+      onClick={onClick}
     >
       {leftIcon && leftIcon}
       <span>{children}</span>

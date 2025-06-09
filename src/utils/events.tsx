@@ -1,7 +1,13 @@
 import { CheckCircle, Clock, XCircle } from "lucide-react";
 import { EventRegistration, User } from "../types";
 
-export const getStatusDisplay = (status: string) => {
+// Returns icon and display info for a given registration status
+export const getStatusDisplay = (status: string): {
+  icon: JSX.Element;
+  text: string;
+  bgColor: string;
+  textColor: string;
+} => {
   switch (status) {
     case "accepted":
       return {
@@ -27,28 +33,26 @@ export const getStatusDisplay = (status: string) => {
   }
 };
 
+// Returns a string like 'X / Y participants' for accepted registrations
 export const getParticipants = (
   registrations: EventRegistration[],
   max_participants: number
-) => {
-  return `${registrations
-    ?.filter((registration) => registration.status === "accepted")
-    .reduce(
-      (sum, reg) => sum + (reg.number_of_participants || 1),
-      0
-    )} / ${max_participants} participants`;
+): string => {
+  const accepted = registrations?.filter((registration) => registration.status === "accepted") ?? [];
+  const count = accepted.reduce((sum, reg) => sum + (reg.number_of_participants ?? 1), 0);
+  return `${count} / ${max_participants ?? 0} participants`;
 };
 
-export const getHostData = (user: User) => {
+// Returns host display name and logo, prioritizing team if available
+export const getHostData = (user: User): { name: string; logo: string } => {
   if (user?.team?.id) {
     return {
-      name: user.team.name,
-      logo: user.team.logo,
-    };
-  } else {
-    return {
-      name: user.username,
-      logo: user.avatar,
+      name: user.team.name ?? '',
+      logo: user.team.logo ?? '',
     };
   }
+  return {
+    name: user.username ?? '',
+    logo: user.avatar ?? '',
+  };
 };

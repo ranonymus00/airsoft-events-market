@@ -6,10 +6,12 @@ import Button from "../components/ui/Button";
 import { useAuth } from "../contexts/AuthContext";
 import { Team } from "../types";
 import FileUpload from "../components/ui/FileUpload";
+import { useFileUpload } from "../hooks/useFileUpload";
 
 const CreateTeam: React.FC = () => {
   const { authState } = useAuth();
   const navigate = useNavigate();
+  const { uploadFiles, isUploading, uploadError } = useFileUpload();
 
   const [formData, setFormData] = useState<Partial<Team>>({
     name: "",
@@ -130,21 +132,34 @@ const CreateTeam: React.FC = () => {
                             const file = e.target.files?.[0];
                             if (file) {
                               try {
-                                // Upload to Supabase Storage and get public URL
-                                const url = await import("../lib/upload").then(
-                                  (m) => m.uploadToSupabase(file, "team-logos")
+                                const urls = await uploadFiles(
+                                  [file],
+                                  "team-logos",
+                                  "logos"
                                 );
                                 setFormData((prev) => ({
                                   ...prev,
-                                  logo: url,
+                                  logo: urls[0],
                                 }));
                               } catch {
-                                setError("Failed to upload logo. Please try again.");
+                                setError(
+                                  "Failed to upload logo. Please try again."
+                                );
                               }
                             }
                           }}
                           className="sr-only"
                         />
+                        {isUploading && (
+                          <p className="text-orange-500 text-xs mt-2">
+                            Uploading logo...
+                          </p>
+                        )}
+                        {uploadError && (
+                          <p className="text-red-500 text-xs mt-2">
+                            {uploadError}
+                          </p>
+                        )}
                       </div>
                       <p className="text-xs text-gray-500">
                         PNG, JPG, GIF up to 10MB

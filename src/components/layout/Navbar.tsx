@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 
+/**
+ * Main navigation bar for the application.
+ * Includes desktop and mobile navigation, user authentication, and accessibility features.
+ */
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { authState, logout } = useAuth();
@@ -27,7 +31,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+    <nav className="bg-slate-900 text-white sticky top-0 z-50 shadow-md" aria-label="Main Navigation">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center space-x-2">
@@ -116,7 +120,7 @@ const Navbar: React.FC = () => {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
-            <button onClick={toggleMenu} className="text-white">
+            <button onClick={toggleMenu} className="text-white" aria-label={isOpen ? 'Close menu' : 'Open menu'}>
               {isOpen ? (
                 <X className="h-6 w-6" />
               ) : (
