@@ -4,21 +4,20 @@ import { Users, Upload, AlertCircle } from "lucide-react";
 import { api } from "../lib/api";
 import Button from "../components/ui/Button";
 import { useAuth } from "../contexts/AuthContext";
-import { Team } from "../types";
 import FileUpload from "../components/ui/FileUpload";
-import { useFileUpload } from "../hooks/useFileUpload";
+import { uploadFilesBatch } from "../lib/upload";
 
 const CreateTeam: React.FC = () => {
   const { authState } = useAuth();
   const navigate = useNavigate();
-  const { uploadFiles, isUploading, uploadError } = useFileUpload();
 
-  const [formData, setFormData] = useState<Partial<Team>>({
+  const [formData, setFormData] = useState({
     name: "",
     description: "",
     logo: "",
     play_style: undefined,
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,30 +37,31 @@ const CreateTeam: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    if (!formData.name || !formData.description) {
-      setError("Please fill in all required fields");
-      return;
-    }
-
-    if (!authState?.user?.id) {
-      setError("You must be logged in to create a team");
-      return;
-    }
-
     setIsSubmitting(true);
-
     try {
-      const newTeam = {
-        name: formData.name,
-        description: formData.description,
-        logo: formData.logo,
-        play_style: formData.play_style,
-        owner_id: authState.user.id,
-      };
-
-      await api.teams.create(newTeam);
-
+      let logoUrl = formData.logo;
+      if (logoFile) {
+        try {
+          const [url] = await uploadFilesBatch([logoFile], "teams", "logos");
+          logoUrl = url;
+        } catch {
+          setError("Failed to upload logo. Please try again.");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      // Validate required fields
+      if (!formData.name || !logoUrl) {
+        setError("Name and logo are required.");
+        setIsSubmitting(false);
+        return;
+      }
+      // Save team (API call)
+      await api.teams.create({
+        ...formData,
+        logo: logoUrl,
+        owner_id: authState.user?.id,
+      });
       // Navigate to success page or show success message
       navigate("/dashboard", {
         state: {
@@ -118,7 +118,10 @@ const CreateTeam: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="logo"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Team Logo
                   </label>
                   <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
@@ -128,38 +131,18 @@ const CreateTeam: React.FC = () => {
                         <FileUpload
                           label={undefined}
                           accept="image/*"
-                          onChange={async (e) => {
+                          name="logo"
+                          onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              try {
-                                const urls = await uploadFiles(
-                                  [file],
-                                  "team-logos",
-                                  "logos"
-                                );
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  logo: urls[0],
-                                }));
-                              } catch {
-                                setError(
-                                  "Failed to upload logo. Please try again."
-                                );
-                              }
+                              setFormData((prev) => ({
+                                ...prev,
+                                logo: URL.createObjectURL(file),
+                              }));
+                              setLogoFile(file);
                             }
                           }}
-                          className="sr-only"
                         />
-                        {isUploading && (
-                          <p className="text-orange-500 text-xs mt-2">
-                            Uploading logo...
-                          </p>
-                        )}
-                        {uploadError && (
-                          <p className="text-red-500 text-xs mt-2">
-                            {uploadError}
-                          </p>
-                        )}
                       </div>
                       <p className="text-xs text-gray-500">
                         PNG, JPG, GIF up to 10MB

@@ -44,15 +44,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   });
 
   useEffect(() => {
-    // Check current auth session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        fetchUser(session.user.id);
-      } else {
-        setAuthState((prev) => ({ ...prev, loading: false }));
-      }
-    });
-
+    // Check current auth session only if not already loading and user is null
+    if (authState.loading && !authState.user) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          fetchUser(session.user.id);
+        } else {
+          setAuthState((prev) => ({ ...prev, loading: false }));
+        }
+      });
+    }
     // Listen for auth changes
     const {
       data: { subscription },
@@ -67,11 +68,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         });
       }
     });
-
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [authState.loading, authState.user]);
 
   const fetchUser = async (userId: string) => {
     try {
@@ -86,6 +86,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
               name,
               description,
               logo,
+              play_style,
               created_at
             )
           )
@@ -132,7 +133,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const register = async (
     username: string,
     email: string,
-    password: string
+    password: string,
+    onSuccess?: () => void,
+    onError?: (message: string) => void
   ): Promise<boolean> => {
     try {
       const {
@@ -142,15 +145,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         email,
         password,
         options: {
-          data: {
-            username: username,
-          },
+          data: { username },
         },
       });
-
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        if (onError) onError(signUpError.message);
+        throw signUpError;
+      }
       if (!user) throw new Error("No user returned after signup");
-
+      // Wait for session
+      let sessionTries = 0;
+      let session = null;
+      while (!session && sessionTries < 10) {
+        const { data } = await supabase.auth.getSession();
+        session = data.session;
+        if (!session) await new Promise(res => setTimeout(res, 200));
+        sessionTries++;
+      }
       // Create user profile
       const { error: profileError } = await supabase.from("users").insert({
         id: user.id,
@@ -158,14 +169,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         email,
         avatar: `https://api.dicebear.com/9.x/adventurer/svg?seed=${username}`,
       });
-
-      if (profileError) throw profileError;
+      if (profileError) {
+        if (onError) onError(profileError.message);
+        throw profileError;
+      }
+      await fetchUser(user.id);
+      if (onSuccess) onSuccess();
       return true;
-    } catch (error) {
+    } catch (error: any) {
+      let msg = "Registration error. Please try again.";
+      if (error?.message && error.message.includes("already registered")) {
+        msg = "User already registered. Try logging in.";
+      } else if (error?.message) {
+        msg = error.message;
+      }
+      if (onError) onError(msg);
       console.error("Registration error:", error);
       return false;
     }
   };
+
 
   const logout = async () => {
     try {

@@ -5,8 +5,9 @@ import { TeamApplication, Team, TeamMap } from "../../../types";
 import Button from "../../ui/Button";
 import EmptySection from "../../ui/EmptySection";
 import { useNavigate } from "react-router-dom";
+import { uploadFilesBatch } from "../../../lib/upload";
 import FileUpload from "../../ui/FileUpload";
-import { useFileUpload } from "../../../hooks/useFileUpload";
+import AvatarUpload from "../../ui/AvatarUpload";
 
 interface TeamTabProps {
   applications: TeamApplication[] | undefined;
@@ -14,7 +15,7 @@ interface TeamTabProps {
 }
 
 const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
-  const { uploadFiles, isUploading, uploadError } = useFileUpload();
+
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
     "applications" | "settings" | "maps"
@@ -25,6 +26,7 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
     description: team?.description,
     play_style: team?.play_style,
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [error, setError] = useState<string>("");
   const [maps, setMaps] = useState<TeamMap[]>([]);
   const [loadingMaps, setLoadingMaps] = useState(false);
@@ -100,16 +102,26 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
   };
 
   // Map modal for add/edit
-  const handleMapModalSave = async (form: Partial<TeamMap>) => {
+  const handleMapModalSave = async (form: Partial<TeamMap>, mapPhotoFiles: File[]) => {
     try {
+      let photoUrls = form.photos || [];
+      if (mapPhotoFiles && mapPhotoFiles.length > 0) {
+        try {
+          photoUrls = await uploadFilesBatch(mapPhotoFiles, "teams", "maps");
+        } catch {
+          setError("Failed to upload map photos. Please try again.");
+          return;
+        }
+      }
+      const cleanForm = { ...form, photos: photoUrls };
       let savedMap: TeamMap;
       if (mapModal.map) {
-        savedMap = await api.teamMaps.update(mapModal.map.id, form);
+        savedMap = await api.teamMaps.update(mapModal.map.id, cleanForm);
         setMaps((prev) =>
           prev.map((m) => (m.id === savedMap.id ? savedMap : m))
         );
       } else {
-        savedMap = await api.teamMaps.create({ ...form, team_id: team?.id });
+        savedMap = await api.teamMaps.create({ ...cleanForm, team_id: team?.id });
         setMaps((prev) => [savedMap, ...prev]);
       }
       setMapModal({ open: false, map: null });
@@ -118,11 +130,13 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
     }
   };
 
+
   const MapModal: React.FC = () => {
     const editing = !!mapModal.map;
     const [form, setForm] = React.useState<Partial<TeamMap>>(
       mapModal.map || {}
     );
+    const [mapPhotoFiles, setMapPhotoFiles] = React.useState<File[]>([]);
     return !mapModal.open ? null : (
       <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg h-[90dvh] overflow-y-auto">
@@ -183,25 +197,18 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
             <FileUpload
               multiple
               accept="image/*"
-              onChange={async (e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const files = Array.from(e.target.files || []);
                 if (files.length > 0) {
-                  try {
-                    const urls = await uploadFiles(files, "map-photos", "maps");
-                    setForm((f) => ({ ...f, photos: urls }));
-                  } catch {
-                    setError("Failed to upload map photos. Please try again.");
-                  }
+                  setMapPhotoFiles(files);
+                  setForm((prev) => ({
+                    ...prev,
+                    photos: files.map((f) => URL.createObjectURL(f)), // preview
+                  }));
                 }
               }}
               className="w-full p-2 border rounded"
             />
-            {isUploading && (
-              <p className="text-orange-500 text-xs mt-2">Uploading map photos...</p>
-            )}
-            {uploadError && (
-              <p className="text-red-500 text-xs mt-2">{uploadError}</p>
-            )}
             {form.photos && form.photos.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {form.photos.map((url, idx) => (
@@ -226,7 +233,7 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
             <Button
               size="small"
               variant="primary"
-              onClick={() => handleMapModalSave(form)}
+              onClick={() => handleMapModalSave(form, mapPhotoFiles)}
             >
               {editing ? "Save Changes" : "Add Map"}
             </Button>
@@ -320,22 +327,16 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Team Information</h3>
             <div className="relative inline-block mb-4">
-              <FileUpload
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        logo: reader.result as string,
-                      }));
-                    };
-                    reader.readAsDataURL(file);
-                  }
+              <AvatarUpload
+                src={formData.logo}
+                onChange={(file: File) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    logo: URL.createObjectURL(file),
+                  }));
+                  setLogoFile(file);
                 }}
-                className="w-full p-2 border rounded"
+                className="w-24 h-24 mx-auto mb-2"
               />
             </div>
             <div className="grid grid-cols-1 gap-4">

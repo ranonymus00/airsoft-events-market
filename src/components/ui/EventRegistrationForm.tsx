@@ -11,13 +11,7 @@ interface EventFormData {
 }
 
 interface EventRegistrationFormProps {
-  onSubmit:
-    | ((
-        message: string,
-        proofImage: string,
-        numberOfParticipants: number
-      ) => void)
-    | ((formData: EventFormData) => void);
+  onSubmit: (formData: EventFormData) => Promise<void>;
   onCancel: () => void;
   event?: Event;
 }
@@ -32,6 +26,7 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
     proofImage: "",
     numberOfParticipants: 1,
   });
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { authState } = useAuth();
 
@@ -42,13 +37,25 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
     setIsSubmitting(true);
 
     try {
-      (
-        onSubmit as (
-          message: string,
-          proofImage: string,
-          numberOfParticipants: number
-        ) => void
-      )(formData.message, formData.proofImage, formData.numberOfParticipants);
+      let proofImageUrl = formData.proofImage;
+      if (proofFile) {
+        try {
+          const mod = await import("../../lib/upload");
+          proofImageUrl = await mod.uploadToSupabase(
+            proofFile,
+            "events",
+            "registrations"
+          );
+        } catch {
+          alert("Failed to upload proof image. Please try again.");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      onSubmit({
+        ...formData,
+        proofImage: proofImageUrl,
+      });
     } catch (error) {
       console.error("Error submitting form:", error);
     } finally {
@@ -110,20 +117,14 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
             </label>
             <FileUpload
               accept="image/*"
-              onChange={async (e) => {
+              onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  try {
-                    const url = await import("../../lib/upload").then((m) =>
-                      m.uploadToSupabase(file, "event-registration-proof")
-                    );
-                    setFormData((prev) => ({
-                      ...prev,
-                      proofImage: url,
-                    }));
-                  } catch {
-                    // Optionally handle error
-                  }
+                  setProofFile(file);
+                  setFormData((prev) => ({
+                    ...prev,
+                    proofImage: URL.createObjectURL(file),
+                  }));
                 }
               }}
               className="w-full p-2 border border-gray-300 rounded-md"

@@ -1,38 +1,33 @@
 import React from "react";
-import { useFileUpload } from "../../hooks/useFileUpload";
 
 interface AvatarUploadProps {
-  src: string;
+  src?: string;
   alt?: string;
-  onChange: (url: string) => void;
+  onChange: (file: File) => void;
   className?: string;
 }
 
 const AvatarUpload: React.FC<AvatarUploadProps> = ({ src, alt = "Avatar", onChange, className = "" }) => {
+  const [preview, setPreview] = React.useState<string | undefined>(typeof src === 'string' ? src : undefined);
+
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleClick = () => {
     fileInputRef.current?.click();
   };
 
-  const { uploadFiles, isUploading, uploadError } = useFileUpload();
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      try {
-        const urls = await uploadFiles([file], "avatars", "avatars");
-        onChange(urls[0]);
-      } catch {
-        // Optionally handle error
-      }
+      setPreview(URL.createObjectURL(file));
+      onChange(file);
     }
   };
 // Optionally, show loading/error UI in the component body
 
   return (
     <div className={`relative inline-block ${className}`}>
-      <img src={src} alt={alt} className="w-32 h-32 rounded-full object-cover" />
+      <img src={preview} alt={alt} className="w-32 h-32 rounded-full object-cover" />
       <button
         type="button"
         onClick={handleClick}

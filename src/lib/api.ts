@@ -335,7 +335,7 @@ export const api = {
           {
             team_id: newTeam.id,
             user_id: team.owner_id,
-            role: "owner",
+            joined_at: new Date().toISOString(),
           },
         ]);
 
@@ -356,7 +356,6 @@ export const api = {
           ),
           team_members!team_members_team_id_fkey(
             joined_at,
-            role,
             users!team_members_user_id_fkey(
               id,
               username,
@@ -460,7 +459,7 @@ export const api = {
           {
             user_id: application.user_id,
             team_id: application.team_id,
-            role: "member",
+            joined_at: new Date().toISOString(),
           },
         ]);
 

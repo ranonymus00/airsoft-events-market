@@ -39,7 +39,7 @@ const EventRegistrationsList: React.FC<EventRegistrationsListProps> = ({
                 <div className="ml-2">
                   <h4 className="font-medium text-gray-900">
                     {registration.user.username}
-                    {registration.user.team
+                    {registration.user.team?.name
                       ? ` - ${registration.user.team.name}`
                       : ""}
                   </h4>

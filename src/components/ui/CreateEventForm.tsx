@@ -9,11 +9,11 @@ import TextInput from "./TextInput";
 import TextareaInput from "./TextareaInput";
 import SelectInput from "./SelectInput";
 import FileUpload from "./FileUpload";
-import { useFileUpload } from "../../hooks/useFileUpload";
+import { uploadFilesBatch } from "../../lib/upload";
 
 interface CreateEventFormProps {
   onClose: () => void;
-  event?: Event; // Optional event for edit mode
+  event?: Event & { imageFile?: File }; // Optional event for edit mode
 }
 
 const CreateEventForm: React.FC<CreateEventFormProps> = ({
@@ -33,8 +33,8 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     rules: event?.rules || "",
     max_participants: event?.max_participants || 20,
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [teamMaps, setTeamMaps] = useState<{ id: string; name: string }[]>([]);
-  const { uploadFiles, isUploading, uploadError } = useFileUpload();
 
   useEffect(() => {
     if (authState.user?.team?.id) {
@@ -66,10 +66,21 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
       alert("You must be logged in to create or edit an event");
       return;
     }
+    let imageUrl = "";
+    if (imageFile) {
+      try {
+        const [url] = await uploadFilesBatch([imageFile], "events", "images");
+        imageUrl = url;
+      } catch {
+        alert("Failed to upload event image. Please try again.");
+        return;
+      }
+    }
     if (event) {
       // Edit mode
       await api.events.update(event.id, {
         ...formData,
+        image: imageUrl,
         user_id: authState.user.id,
       });
       onClose();
@@ -78,6 +89,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
       const newEvent: Event = {
         id: crypto.randomUUID(),
         ...formData,
+        image: imageUrl,
         user_id: authState.user.id,
         user: authState.user,
         participants: [],
@@ -93,7 +105,9 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -170,25 +184,18 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
         <FileUpload
           label="Event Image"
           accept="image/*"
-          onChange={async (e) => {
+          onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) {
-              try {
-                const urls = await uploadFiles([file], "event-images", "events");
-                setFormData((prev) => ({
-                  ...prev,
-                  image: urls[0],
-                }));
-              } catch {
-                alert("Failed to upload image. Please try again.");
-              }
+              setFormData((prev) => ({
+                ...prev,
+                image: URL.createObjectURL(file),
+              }));
+              setImageFile(file);
             }
           }}
-          required
-          disabled={isUploading}
+          className="w-full p-2 border rounded"
         />
-        {isUploading && <p>Uploading...</p>}
-        {uploadError && <p style={{ color: "red" }}>{uploadError.message}</p>}
         {formData.image && (
           <img
             src={formData.image}
