@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../lib/api";
@@ -34,81 +34,66 @@ const Dashboard: React.FC = () => {
   const [showEditEventForm, setShowEditEventForm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
-  // State for data from API with loading flags to prevent duplicate calls
+  // State for data from API
   const [userEvents, setUserEvents] = useState<Event[]>([]);
   const [userItems, setUserItems] = useState<MarketplaceItem[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState({
-    events: false,
-    items: false,
-    teams: false,
-  });
-  const [dataLoaded, setDataLoaded] = useState({
-    events: false,
-    items: false,
-    teams: false,
+    events: true,
+    items: true,
+    teams: true,
   });
 
-  // Load user's events with duplicate call prevention
-  const loadUserEvents = useCallback(async () => {
-    if (!authState?.user?.id || loading.events || dataLoaded.events) return;
+  // Load user's events
+  const loadUserEvents = async () => {
+    if (!authState?.user?.id) return;
 
-    setLoading((prev) => ({ ...prev, events: true }));
     try {
       const events = await api.events.getAll();
       const filteredEvents = events.filter(
         (event) => event.user_id === authState?.user?.id
       );
       setUserEvents(filteredEvents);
-      setDataLoaded((prev) => ({ ...prev, events: true }));
     } catch (err) {
       console.error("Error loading events:", err);
     } finally {
       setLoading((prev) => ({ ...prev, events: false }));
     }
-  }, [authState?.user?.id, loading.events, dataLoaded.events]);
+  };
 
-  const loadUserItems = useCallback(async () => {
-    if (!authState?.user?.id || loading.items || dataLoaded.items) return;
+  const loadUserItems = async () => {
+    if (!authState?.user?.id) return;
 
-    setLoading((prev) => ({ ...prev, items: true }));
     try {
       const items = await api.marketplace.getAll();
       const filteredItems = items.filter(
         (item) => item.seller.id === authState?.user?.id
       );
       setUserItems(filteredItems);
-      setDataLoaded((prev) => ({ ...prev, items: true }));
     } catch (err) {
       console.error("Error loading marketplace items:", err);
     } finally {
       setLoading((prev) => ({ ...prev, items: false }));
     }
-  }, [authState?.user?.id, loading.items, dataLoaded.items]);
+  };
 
-  const loadTeams = useCallback(async () => {
-    if (loading.teams || dataLoaded.teams) return;
-
-    setLoading((prev) => ({ ...prev, teams: true }));
+  const loadTeams = async () => {
     try {
       const teams = await api.teams.getAll();
       setTeams(teams);
-      setDataLoaded((prev) => ({ ...prev, teams: true }));
     } catch (err) {
       console.error("Error loading teams:", err);
     } finally {
       setLoading((prev) => ({ ...prev, teams: false }));
     }
-  }, [loading.teams, dataLoaded.teams]);
+  };
 
-  // Load data only when user is available and data hasn't been loaded yet
   useEffect(() => {
-    if (authState?.user?.id) {
-      if (!dataLoaded.events) loadUserEvents();
-      if (!dataLoaded.items) loadUserItems();
-      if (!dataLoaded.teams) loadTeams();
-    }
-  }, [authState?.user?.id, dataLoaded.events, dataLoaded.items, dataLoaded.teams, loadUserEvents, loadUserItems, loadTeams]);
+    loadUserEvents();
+    loadUserItems();
+    loadTeams();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authState?.user?.id]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -122,28 +107,28 @@ const Dashboard: React.FC = () => {
     });
   }, [authState, navigate]);
 
-  const handleAvatarClick = useCallback(() => {
+  const handleAvatarClick = () => {
     fileInputRef.current?.click();
-  }, []);
+  };
 
-  const handleAvatarChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setSelectedFile(file);
     const imageUrl = URL.createObjectURL(file);
     setPreviewUrl(imageUrl);
-  }, []);
+  };
 
-  const handleProfileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfileForm((prev) => ({
       ...prev,
       [name]: value,
     }));
-  }, []);
+  };
 
-  const handleSaveChanges = useCallback(async () => {
+  const handleSaveChanges = async () => {
     try {
       let avatarUrl = authState?.user?.avatar;
 
@@ -168,49 +153,46 @@ const Dashboard: React.FC = () => {
       setError("Failed to update profile. Please try again.");
       console.error("Profile update error:", error);
     }
-  }, [authState?.user?.avatar, selectedFile, previewUrl, updateProfile, profileForm.email, profileForm.username]);
+  };
 
-  const handleEditEvent = useCallback((event: Event) => {
+  const handleEditEvent = (event: Event) => {
     setSelectedEvent(event);
     setShowEditEventForm(true);
-  }, []);
+  };
 
-  const handleDeleteEvent = useCallback(async (eventId: string) => {
+  const handleDeleteEvent = async (eventId: string) => {
     if (!window.confirm("Are you sure you want to delete this event?")) {
       return;
     }
 
     try {
       await api.events.update(eventId, { deleted: true });
-      // Refresh events after deletion
-      setDataLoaded((prev) => ({ ...prev, events: false }));
       await loadUserEvents();
     } catch (err) {
       console.error("Error deleting event:", err);
       setError("Failed to delete event. Please try again.");
     }
-  }, [loadUserEvents]);
+  };
 
-  const handleApplyToTeam = useCallback(async (teamId: string) => {
+  const handleApplyToTeam = async (teamId: string) => {
     if (!authState?.user?.id) return;
 
     try {
       await api.teams.apply(teamId);
-      // Refresh teams after application
-      setDataLoaded((prev) => ({ ...prev, teams: false }));
       await loadTeams();
     } catch (err) {
       console.error("Error applying to team:", err);
       setError("Failed to apply to team. Please try again.");
     }
-  }, [authState?.user?.id, loadTeams]);
+  };
 
   // Update tab in URL when changed
   useEffect(() => {
     if (activeTab !== searchParams.get("tab")) {
       setSearchParams({ tab: activeTab });
     }
-  }, [activeTab, searchParams, setSearchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   // Sync tab with URL if changed externally
   useEffect(() => {
@@ -218,7 +200,8 @@ const Dashboard: React.FC = () => {
     if (urlTab && urlTab !== activeTab) {
       setActiveTab(urlTab);
     }
-  }, [location.search, activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   if (!authState?.user) {
     return null;
