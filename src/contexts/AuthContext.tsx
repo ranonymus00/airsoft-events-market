@@ -55,22 +55,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       });
     }
     // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
-        fetchUser(session.user.id);
-      } else {
-        setAuthState({
-          user: null,
-          isAuthenticated: false,
-          loading: false,
-        });
-      }
-    });
-    return () => {
-      subscription.unsubscribe();
-    };
+    // const {
+    //   data: { subscription },
+    // } = supabase.auth.onAuthStateChange(async (event, session) => {
+    //   if (session) {
+    //     fetchUser(session.user.id);
+    //   } else {
+    //     setAuthState({
+    //       user: null,
+    //       isAuthenticated: false,
+    //       loading: false,
+    //     });
+    //   }
+    // });
+    // return () => {
+    //   subscription.unsubscribe();
+    // };
   }, [authState.loading, authState.user]);
 
   const fetchUser = async (userId: string) => {

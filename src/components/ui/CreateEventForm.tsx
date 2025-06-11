@@ -76,31 +76,44 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
         return;
       }
     }
+    console.log(event);
     if (event) {
-      // Edit mode
-      await api.events.update(event.id, {
-        ...formData,
-        image: imageUrl,
-        user_id: authState.user.id,
-      });
-      onClose();
+      try {
+        // Edit mode
+        await api.events.update(event.id, {
+          ...formData,
+          image: imageUrl,
+          user_id: authState.user.id,
+        });
+        onClose();
+      } catch (err) {
+        alert("Failed to edit the event. Please try again.");
+        console.log("Failed to edit the event. Please try again.", err);
+        return;
+      }
     } else {
-      // Create mode
-      const newEvent: Event = {
-        id: crypto.randomUUID(),
-        ...formData,
-        image: imageUrl,
-        user_id: authState.user.id,
-        user: authState.user,
-        participants: [],
-        registrations: [],
-        created_at: new Date().toISOString(),
-        canceled: false,
-      };
-      // Here you would typically make an API call to save the event
-      // For now, we'll just navigate to the event page
-      navigate(`/events/${newEvent.id}`);
-      onClose();
+      try {
+        // Create mode
+        const newEvent: Event = {
+          id: crypto.randomUUID(),
+          ...formData,
+          image: imageUrl,
+          user_id: authState.user.id,
+          user: authState.user,
+          participants: [],
+          registrations: [],
+          created_at: new Date().toISOString(),
+          canceled: false,
+        };
+        // Here you would typically make an API call to save the event
+        // For now, we'll just navigate to the event page
+        navigate(`/events/${newEvent.id}`);
+        onClose();
+      } catch (err) {
+        alert("Failed to edit the event. Please try again.");
+        console.log("Failed to edit the event. Please try again.", err);
+        return;
+      }
     }
   };
 
