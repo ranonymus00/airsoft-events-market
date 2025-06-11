@@ -69,12 +69,6 @@ const Navbar: React.FC = () => {
                   </button>
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-150">
                     <Link
-                      to="/dashboard?tab=profile"
-                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                    >
-                      Profile
-                    </Link>
-                    <Link
                       to="/dashboard?tab=events"
                       className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                     >

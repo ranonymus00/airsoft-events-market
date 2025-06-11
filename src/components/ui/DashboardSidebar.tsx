@@ -1,9 +1,9 @@
 import React from "react";
-import { User, Calendar, ShoppingBag, Settings, Users } from "lucide-react";
+import { Calendar, ShoppingBag, Settings, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface DashboardSidebarProps {
   activeTab: string;
-  onTabChange: (tab: string) => void;
   user: {
     username: string;
     email: string;
@@ -13,11 +13,9 @@ interface DashboardSidebarProps {
 
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   activeTab,
-  onTabChange,
   user,
 }) => {
   const tabs = [
-    { id: "profile", label: "Profile", icon: User },
     { id: "events", label: "My Events", icon: Calendar },
     { id: "marketplace", label: "My Listings", icon: ShoppingBag },
     { id: "team", label: "My Team", icon: Users },
@@ -49,8 +47,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               const Icon = tab.icon;
               return (
                 <li key={tab.id}>
-                  <button
-                    onClick={() => onTabChange(tab.id)}
+                  <Link
+                    to={`/dashboard/${tab.id}`}
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors duration-200 ${
                       activeTab === tab.id
                         ? "bg-orange-50 text-orange-600"
@@ -59,7 +57,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                   >
                     <Icon className="h-5 w-5" />
                     <span>{tab.label}</span>
-                  </button>
+                  </Link>
                 </li>
               );
             })}
