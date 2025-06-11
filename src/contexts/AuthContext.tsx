@@ -3,6 +3,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
 } from "react";
 import { AuthState } from "../types";
@@ -43,37 +44,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     loading: true,
   });
 
-  useEffect(() => {
-    // Check current auth session only if not already loading and user is null
-    if (authState.loading && !authState.user) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          fetchUser(session.user.id);
-        } else {
-          setAuthState((prev) => ({ ...prev, loading: false }));
-        }
-      });
-    }
-    // Listen for auth changes
-    // const {
-    //   data: { subscription },
-    // } = supabase.auth.onAuthStateChange(async (event, session) => {
-    //   if (session) {
-    //     fetchUser(session.user.id);
-    //   } else {
-    //     setAuthState({
-    //       user: null,
-    //       isAuthenticated: false,
-    //       loading: false,
-    //     });
-    //   }
-    // });
-    // return () => {
-    //   subscription.unsubscribe();
-    // };
-  }, [authState.loading, authState.user]);
-
-  const fetchUser = async (userId: string) => {
+  // Memoize fetchUser to prevent recreating on every render
+  const fetchUser = useCallback(async (userId: string) => {
     try {
       const { data: user, error } = await supabase
         .from("users")
@@ -113,9 +85,86 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         loading: false,
       });
     }
-  };
+  }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  // Initialize auth state and set up listener
+  useEffect(() => {
+    let mounted = true;
+
+    // Get initial session
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting session:", error);
+          if (mounted) {
+            setAuthState({
+              user: null,
+              isAuthenticated: false,
+              loading: false,
+            });
+          }
+          return;
+        }
+
+        if (session?.user && mounted) {
+          await fetchUser(session.user.id);
+        } else if (mounted) {
+          setAuthState({
+            user: null,
+            isAuthenticated: false,
+            loading: false,
+          });
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        if (mounted) {
+          setAuthState({
+            user: null,
+            isAuthenticated: false,
+            loading: false,
+          });
+        }
+      }
+    };
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+
+        console.log("Auth state changed:", event, session?.user?.id);
+
+        if (event === 'SIGNED_IN' && session?.user) {
+          await fetchUser(session.user.id);
+        } else if (event === 'SIGNED_OUT' || !session) {
+          setAuthState({
+            user: null,
+            isAuthenticated: false,
+            loading: false,
+          });
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          // Don't refetch user data on token refresh, just update loading state
+          setAuthState(prev => ({
+            ...prev,
+            loading: false,
+          }));
+        }
+      }
+    );
+
+    // Initialize auth
+    initializeAuth();
+
+    // Cleanup function
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchUser]);
+
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -128,14 +177,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       console.error("Login error:", error);
       return false;
     }
-  };
+  }, []);
 
-  const register = async (
+  const register = useCallback(async (
     username: string,
     email: string,
-    password: string,
-    onSuccess?: () => void,
-    onError?: (message: string) => void
+    password: string
   ): Promise<boolean> => {
     try {
       const {
@@ -148,12 +195,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           data: { username },
         },
       });
+
       if (signUpError) {
-        if (onError) onError(signUpError.message);
         throw signUpError;
       }
       if (!user) throw new Error("No user returned after signup");
-      // Wait for session
+
+      // Wait for session to be established
       let sessionTries = 0;
       let session = null;
       while (!session && sessionTries < 10) {
@@ -162,6 +210,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         if (!session) await new Promise(res => setTimeout(res, 200));
         sessionTries++;
       }
+
       // Create user profile
       const { error: profileError } = await supabase.from("users").insert({
         id: user.id,
@@ -169,64 +218,69 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         email,
         avatar: `https://api.dicebear.com/9.x/adventurer/svg?seed=${username}`,
       });
+
       if (profileError) {
-        if (onError) onError(profileError.message);
         throw profileError;
       }
-      await fetchUser(user.id);
-      if (onSuccess) onSuccess();
+
+      // The auth listener will handle fetching the user data
       return true;
     } catch (error: any) {
-      let msg = "Registration error. Please try again.";
-      if (error?.message && error.message.includes("already registered")) {
-        msg = "User already registered. Try logging in.";
-      } else if (error?.message) {
-        msg = error.message;
-      }
-      if (onError) onError(msg);
       console.error("Registration error:", error);
       return false;
     }
-  };
+  }, []);
 
-
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await supabase.auth.signOut();
+      // The auth listener will handle clearing the state
     } catch (error) {
       console.error("Logout error:", error);
     }
-  };
+  }, []);
 
-  const updateProfile = async (data: {
+  const updateProfile = useCallback(async (data: {
     username?: string;
     email?: string;
     avatar?: string;
   }): Promise<boolean> => {
     try {
+      if (!authState.user?.id) {
+        throw new Error("No user logged in");
+      }
+
       const { error } = await supabase
         .from("users")
         .update(data)
-        .eq("id", authState.user?.id);
+        .eq("id", authState.user.id);
 
       if (error) throw error;
+
+      // Update local state immediately for better UX
+      setAuthState(prev => ({
+        ...prev,
+        user: prev.user ? { ...prev.user, ...data } : null,
+      }));
+
       return true;
     } catch (error) {
       console.error("Update profile error:", error);
       return false;
     }
-  };
+  }, [authState.user?.id]);
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = React.useMemo(() => ({
+    authState,
+    login,
+    register,
+    logout,
+    updateProfile,
+  }), [authState, login, register, logout, updateProfile]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        authState,
-        login,
-        register,
-        logout,
-        updateProfile,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
