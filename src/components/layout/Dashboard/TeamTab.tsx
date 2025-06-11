@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Check, X, AlertCircle, Users, AlertTriangle } from "lucide-react";
 import { api } from "../../../lib/api";
 import { TeamApplication, Team, TeamMap } from "../../../types";
@@ -15,7 +15,6 @@ interface TeamTabProps {
 }
 
 const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
-
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
     "applications" | "settings" | "maps"
@@ -38,12 +37,15 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
     map: null,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (team && activeTab === "maps") {
       setLoadingMaps(true);
       api.teamMaps
         .getByTeam(team.id)
-        .then(setMaps)
+        .then((data) => {
+          console.log(data);
+          setMaps(data);
+        })
         .catch(() => setMaps([]))
         .finally(() => setLoadingMaps(false));
     }
@@ -79,11 +81,27 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
     }
   };
 
-  const handleTeamUpdate = async (teamData: Partial<Team>) => {
+  const handleTeamUpdate = async (
+    teamData: Partial<Team>,
+    logoFile: File | null
+  ) => {
     if (!team?.id) return;
 
+    let logoUrls = [teamData.logo];
+    if (logoFile) {
+      try {
+        logoUrls = await uploadFilesBatch([logoFile], "teams", "logos");
+      } catch {
+        setError("Failed to upload map photos. Please try again.");
+        return;
+      }
+    }
+    const cleanForm = { ...teamData, logo: logoUrls[0] };
+
     try {
-      await api.teams.update(team.id, teamData);
+      console.log(cleanForm);
+      const response = await api.teams.update(team.id, cleanForm);
+      console.log(response);
     } catch (err) {
       console.error("Error updating team:", err);
       setError("Failed to update team. Please try again.");
@@ -102,7 +120,10 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
   };
 
   // Map modal for add/edit
-  const handleMapModalSave = async (form: Partial<TeamMap>, mapPhotoFiles: File[]) => {
+  const handleMapModalSave = async (
+    form: Partial<TeamMap>,
+    mapPhotoFiles: File[]
+  ) => {
     try {
       let photoUrls = form.photos || [];
       if (mapPhotoFiles && mapPhotoFiles.length > 0) {
@@ -121,7 +142,10 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
           prev.map((m) => (m.id === savedMap.id ? savedMap : m))
         );
       } else {
-        savedMap = await api.teamMaps.create({ ...cleanForm, team_id: team?.id });
+        savedMap = await api.teamMaps.create({
+          ...cleanForm,
+          team_id: team?.id,
+        });
         setMaps((prev) => [savedMap, ...prev]);
       }
       setMapModal({ open: false, map: null });
@@ -130,13 +154,10 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
     }
   };
 
-
   const MapModal: React.FC = () => {
     const editing = !!mapModal.map;
-    const [form, setForm] = React.useState<Partial<TeamMap>>(
-      mapModal.map || {}
-    );
-    const [mapPhotoFiles, setMapPhotoFiles] = React.useState<File[]>([]);
+    const [form, setForm] = useState<Partial<TeamMap>>(mapModal.map || {});
+    const [mapPhotoFiles, setMapPhotoFiles] = useState<File[]>([]);
     return !mapModal.open ? null : (
       <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg h-[90dvh] overflow-y-auto">
@@ -383,7 +404,10 @@ const TeamTab: React.FC<TeamTabProps> = ({ applications, team }) => {
               </div>
             </div>
             <div className="mt-4">
-              <Button size="small" onClick={() => handleTeamUpdate(formData)}>
+              <Button
+                size="small"
+                onClick={() => handleTeamUpdate(formData, logoFile)}
+              >
                 Save Changes
               </Button>
             </div>

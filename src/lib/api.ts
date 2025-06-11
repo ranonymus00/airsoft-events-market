@@ -423,6 +423,7 @@ export const api = {
         `
         )
         .single();
+      console.log(data, error);
       if (error) throw error;
       return transformTeamData(data);
     },

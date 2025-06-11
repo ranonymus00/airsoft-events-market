@@ -44,6 +44,41 @@ const Dashboard: React.FC = () => {
     teams: true,
   });
 
+  useEffect(() => {
+    if (authState.user?.id) {
+      loadUserEvents();
+      loadUserItems();
+      loadTeams();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authState?.user?.id]);
+
+  useEffect(() => {
+    if (authState.user) {
+      setProfileForm({
+        email: authState.user.email || "",
+        username: authState.user.username || "",
+      });
+    }
+  }, [authState.user]);
+
+  // Update tab in URL when changed
+  useEffect(() => {
+    if (activeTab !== searchParams.get("tab")) {
+      setSearchParams({ tab: activeTab });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  // Sync tab with URL if changed externally
+  useEffect(() => {
+    const urlTab = searchParams.get("tab");
+    if (urlTab && urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
   // Show loading spinner while auth is loading
   if (authState.loading) {
     return (
@@ -111,24 +146,6 @@ const Dashboard: React.FC = () => {
       setLoading((prev) => ({ ...prev, teams: false }));
     }
   };
-
-  useEffect(() => {
-    if (authState.user?.id) {
-      loadUserEvents();
-      loadUserItems();
-      loadTeams();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authState?.user?.id]);
-
-  useEffect(() => {
-    if (authState.user) {
-      setProfileForm({
-        email: authState.user.email || "",
-        username: authState.user.username || "",
-      });
-    }
-  }, [authState.user]);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -208,23 +225,6 @@ const Dashboard: React.FC = () => {
       setError("Failed to apply to team. Please try again.");
     }
   };
-
-  // Update tab in URL when changed
-  useEffect(() => {
-    if (activeTab !== searchParams.get("tab")) {
-      setSearchParams({ tab: activeTab });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
-
-  // Sync tab with URL if changed externally
-  useEffect(() => {
-    const urlTab = searchParams.get("tab");
-    if (urlTab && urlTab !== activeTab) {
-      setActiveTab(urlTab);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search]);
 
   return (
     <div className="bg-gray-50 min-h-screen pb-12">
