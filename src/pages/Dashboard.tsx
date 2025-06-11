@@ -44,6 +44,30 @@ const Dashboard: React.FC = () => {
     teams: true,
   });
 
+  // Show loading spinner while auth is loading
+  if (authState.loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated (only after loading is complete)
+  if (!authState.isAuthenticated && !authState.loading) {
+    navigate("/login");
+    return null;
+  }
+
+  // Don't render anything if user is not available yet
+  if (!authState.user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
   // Load user's events
   const loadUserEvents = async () => {
     if (!authState?.user?.id) return;
@@ -89,23 +113,22 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    loadUserEvents();
-    loadUserItems();
-    loadTeams();
+    if (authState.user?.id) {
+      loadUserEvents();
+      loadUserItems();
+      loadTeams();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authState?.user?.id]);
 
-  // Redirect if not authenticated
   useEffect(() => {
-    if (!authState?.isAuthenticated && !authState?.loading) {
-      navigate("/login");
+    if (authState.user) {
+      setProfileForm({
+        email: authState.user.email || "",
+        username: authState.user.username || "",
+      });
     }
-
-    setProfileForm({
-      email: authState?.user?.email || "",
-      username: authState?.user?.username || "",
-    });
-  }, [authState, navigate]);
+  }, [authState.user]);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -202,10 +225,6 @@ const Dashboard: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
-
-  if (!authState?.user) {
-    return null;
-  }
 
   return (
     <div className="bg-gray-50 min-h-screen pb-12">

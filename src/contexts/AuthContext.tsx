@@ -90,10 +90,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   // Initialize auth state and set up listener
   useEffect(() => {
     let mounted = true;
+    let authInitialized = false;
 
-    // Get initial session
+    // Get initial session with retry logic for better reliability
     const initializeAuth = async () => {
+      if (authInitialized) return;
+      
       try {
+        // Wait a bit for Supabase to initialize properly
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -107,6 +113,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           }
           return;
         }
+
+        authInitialized = true;
 
         if (session?.user && mounted) {
           await fetchUser(session.user.id);
@@ -136,30 +144,62 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
         console.log("Auth state changed:", event, session?.user?.id);
 
-        if (event === 'SIGNED_IN' && session?.user) {
-          await fetchUser(session.user.id);
-        } else if (event === 'SIGNED_OUT' || !session) {
-          setAuthState({
-            user: null,
-            isAuthenticated: false,
-            loading: false,
-          });
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          // Don't refetch user data on token refresh, just update loading state
-          setAuthState(prev => ({
-            ...prev,
-            loading: false,
-          }));
+        // Handle different auth events
+        switch (event) {
+          case 'SIGNED_IN':
+            if (session?.user) {
+              await fetchUser(session.user.id);
+            }
+            break;
+          
+          case 'SIGNED_OUT':
+            setAuthState({
+              user: null,
+              isAuthenticated: false,
+              loading: false,
+            });
+            break;
+          
+          case 'TOKEN_REFRESHED':
+            // Don't refetch user data on token refresh, just ensure we're not loading
+            if (session?.user) {
+              setAuthState(prev => ({
+                ...prev,
+                loading: false,
+              }));
+            }
+            break;
+          
+          case 'INITIAL_SESSION':
+            // This handles the initial session on page load/refresh
+            if (session?.user) {
+              await fetchUser(session.user.id);
+            } else {
+              setAuthState({
+                user: null,
+                isAuthenticated: false,
+                loading: false,
+              });
+            }
+            break;
+          
+          default:
+            // For any other events, just ensure loading is false
+            setAuthState(prev => ({
+              ...prev,
+              loading: false,
+            }));
         }
       }
     );
 
-    // Initialize auth
-    initializeAuth();
+    // Initialize auth with a small delay to ensure Supabase is ready
+    const timeoutId = setTimeout(initializeAuth, 50);
 
     // Cleanup function
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, [fetchUser]);

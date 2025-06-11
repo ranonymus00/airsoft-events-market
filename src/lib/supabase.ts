@@ -11,9 +11,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'supabase.auth.token',
   },
   db: {
     schema: 'public'
-  }
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'airsoft-hub@1.0.0',
+    },
+  },
 });
