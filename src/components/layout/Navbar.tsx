@@ -31,7 +31,10 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="bg-slate-900 text-white sticky top-0 z-50 shadow-md" aria-label="Main Navigation">
+    <nav
+      className="bg-slate-900 text-white sticky top-0 z-50 shadow-md"
+      aria-label="Main Navigation"
+    >
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center space-x-2">
@@ -69,25 +72,25 @@ const Navbar: React.FC = () => {
                   </button>
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity duration-150">
                     <Link
-                      to="/dashboard?tab=events"
+                      to="/dashboard/events"
                       className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                     >
                       My Events
                     </Link>
                     <Link
-                      to="/dashboard?tab=marketplace"
+                      to="/dashboard/marketplace"
                       className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                     >
                       My Listings
                     </Link>
                     <Link
-                      to="/dashboard?tab=team"
+                      to="/dashboard/team"
                       className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                     >
                       My Team
                     </Link>
                     <Link
-                      to="/dashboard?tab=settings"
+                      to="/dashboard/settings"
                       className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                     >
                       Settings
@@ -114,7 +117,11 @@ const Navbar: React.FC = () => {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
-            <button onClick={toggleMenu} className="text-white" aria-label={isOpen ? 'Close menu' : 'Open menu'}>
+            <button
+              onClick={toggleMenu}
+              className="text-white"
+              aria-label={isOpen ? "Close menu" : "Open menu"}
+            >
               {isOpen ? (
                 <X className="h-6 w-6" />
               ) : (
@@ -156,14 +163,13 @@ const Navbar: React.FC = () => {
 
             {authState.isAuthenticated ? (
               <>
-                <Link
-                  to="/dashboard"
+                <div
                   className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center space-x-2 py-2"
                   onClick={toggleMenu}
                 >
                   <User className="h-5 w-5" />
                   <span>Dashboard</span>
-                </Link>
+                </div>
                 <button
                   onClick={() => {
                     handleLogout();

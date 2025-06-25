@@ -6,23 +6,23 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
-import { AuthState } from "../types";
 import { supabase } from "../lib/supabase";
+import { User } from "../types";
 
 interface AuthContextType {
-  authState: AuthState;
-  login: (email: string, password: string) => Promise<boolean>;
+  authState: {
+    user: User | null;
+    isAuthenticated: boolean;
+    loading: boolean;
+  };
+  login: (email: User["email"], password: User["password"]) => Promise<boolean>;
   register: (
-    username: string,
-    email: string,
-    password: string
+    username: User["username"],
+    email: User["email"],
+    password: User["password"]
   ) => Promise<boolean>;
-  logout: () => void;
-  updateProfile: (data: {
-    username?: string;
-    email?: string;
-    avatar?: string;
-  }) => Promise<boolean>;
+  logout: () => Promise<void>;
+  updateProfile: (avatar: User["avatar"]) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,13 +38,12 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [authState, setAuthState] = useState<AuthState>({
+  const [authState, setAuthState] = useState<AuthContextType["authState"]>({
     user: null,
     isAuthenticated: false,
     loading: true,
   });
 
-  // Memoize fetchUser to prevent recreating on every render
   const fetchUser = useCallback(async (userId: string) => {
     try {
       const { data: user, error } = await supabase
@@ -87,240 +86,128 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, []);
 
-  // Initialize auth state and set up listener
   useEffect(() => {
-    let mounted = true;
-    let authInitialized = false;
-
-    // Get initial session with retry logic for better reliability
-    const initializeAuth = async () => {
-      if (authInitialized) return;
-      
-      try {
-        // Wait a bit for Supabase to initialize properly
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Error getting session:", error);
-          if (mounted) {
-            setAuthState({
-              user: null,
-              isAuthenticated: false,
-              loading: false,
-            });
-          }
-          return;
-        }
-
-        authInitialized = true;
-
-        if (session?.user && mounted) {
-          await fetchUser(session.user.id);
-        } else if (mounted) {
-          setAuthState({
-            user: null,
-            isAuthenticated: false,
-            loading: false,
-          });
-        }
-      } catch (error) {
-        console.error("Error initializing auth:", error);
-        if (mounted) {
-          setAuthState({
-            user: null,
-            isAuthenticated: false,
-            loading: false,
-          });
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        fetchUser(session.user.id);
+      } else {
+        setAuthState({
+          user: null,
+          isAuthenticated: false,
+          loading: false,
+        });
       }
-    };
+    });
 
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-
-        console.log("Auth state changed:", event, session?.user?.id);
-
-        // Handle different auth events
-        switch (event) {
-          case 'SIGNED_IN':
-            if (session?.user) {
-              await fetchUser(session.user.id);
-            }
-            break;
-          
-          case 'SIGNED_OUT':
-            setAuthState({
-              user: null,
-              isAuthenticated: false,
-              loading: false,
-            });
-            break;
-          
-          case 'TOKEN_REFRESHED':
-            // Don't refetch user data on token refresh, just ensure we're not loading
-            if (session?.user) {
-              setAuthState(prev => ({
-                ...prev,
-                loading: false,
-              }));
-            }
-            break;
-          
-          case 'INITIAL_SESSION':
-            // This handles the initial session on page load/refresh
-            if (session?.user) {
-              await fetchUser(session.user.id);
-            } else {
-              setAuthState({
-                user: null,
-                isAuthenticated: false,
-                loading: false,
-              });
-            }
-            break;
-          
-          default:
-            // For any other events, just ensure loading is false
-            setAuthState(prev => ({
-              ...prev,
-              loading: false,
-            }));
-        }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        fetchUser(session.user.id);
+      } else {
+        setAuthState({
+          user: null,
+          isAuthenticated: false,
+          loading: false,
+        });
       }
-    );
+    });
 
-    // Initialize auth with a small delay to ensure Supabase is ready
-    const timeoutId = setTimeout(initializeAuth, 50);
+    return () => subscription.unsubscribe();
+  }, []);
 
-    // Cleanup function
-    return () => {
-      mounted = false;
-      clearTimeout(timeoutId);
-      subscription.unsubscribe();
-    };
-  }, [fetchUser]);
-
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
+  const login = useCallback(
+    async (email: string, password: string): Promise<boolean> => {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.error("Login error:", error);
-      return false;
-    }
-  }, []);
+      if (session) fetchUser(session.user.id);
 
-  const register = useCallback(async (
-    username: string,
-    email: string,
-    password: string
-  ): Promise<boolean> => {
-    try {
+      if (error) {
+        console.log(error);
+      }
+
+      return true;
+    },
+    []
+  );
+
+  const register = useCallback(
+    async (
+      username: string,
+      email: string,
+      password: string
+    ): Promise<boolean> => {
+      setAuthState((prev) => ({ ...prev, loading: true }));
       const {
         data: { user },
-        error: signUpError,
+        error,
       } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: { username },
-        },
+        options: { data: { username } },
       });
+      if (user) fetchUser(user.id);
 
-      if (signUpError) {
-        throw signUpError;
-      }
-      if (!user) throw new Error("No user returned after signup");
-
-      // Wait for session to be established
-      let sessionTries = 0;
-      let session = null;
-      while (!session && sessionTries < 10) {
-        const { data } = await supabase.auth.getSession();
-        session = data.session;
-        if (!session) await new Promise(res => setTimeout(res, 200));
-        sessionTries++;
+      if (error) {
+        console.log(error);
       }
 
-      // Create user profile
-      const { error: profileError } = await supabase.from("users").insert({
-        id: user.id,
-        username,
-        email,
-        avatar: `https://api.dicebear.com/9.x/adventurer/svg?seed=${username}`,
-      });
-
-      if (profileError) {
-        throw profileError;
-      }
-
-      // The auth listener will handle fetching the user data
       return true;
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      return false;
-    }
-  }, []);
+    },
+    []
+  );
 
   const logout = useCallback(async () => {
-    try {
-      await supabase.auth.signOut();
-      // The auth listener will handle clearing the state
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    await supabase.auth.signOut();
+
+    setAuthState({
+      user: null,
+      isAuthenticated: false,
+      loading: false,
+    });
   }, []);
 
-  const updateProfile = useCallback(async (data: {
-    username?: string;
-    email?: string;
-    avatar?: string;
-  }): Promise<boolean> => {
-    try {
-      if (!authState.user?.id) {
-        throw new Error("No user logged in");
+  const updateProfile = useCallback(
+    async (avatar: string): Promise<boolean> => {
+      try {
+        if (!authState.user?.id) {
+          throw new Error("No user logged in");
+        }
+
+        const { error } = await supabase
+          .from("users")
+          .update({
+            avatar,
+          })
+          .eq("id", authState.user.id);
+
+        if (error) throw error;
+
+        // Update local state immediately for better UX
+        setAuthState((prev) => ({
+          ...prev,
+          user: prev.user ? { ...prev.user, avatar } : null,
+        }));
+
+        return true;
+      } catch (error) {
+        console.error("Update profile error:", error);
+        return false;
       }
-
-      const { error } = await supabase
-        .from("users")
-        .update(data)
-        .eq("id", authState.user.id);
-
-      if (error) throw error;
-
-      // Update local state immediately for better UX
-      setAuthState(prev => ({
-        ...prev,
-        user: prev.user ? { ...prev.user, ...data } : null,
-      }));
-
-      return true;
-    } catch (error) {
-      console.error("Update profile error:", error);
-      return false;
-    }
-  }, [authState.user?.id]);
-
-  // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = React.useMemo(() => ({
-    authState,
-    login,
-    register,
-    logout,
-    updateProfile,
-  }), [authState, login, register, logout, updateProfile]);
+    },
+    [authState.user?.id]
+  );
 
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider
+      value={{ authState, login, register, logout, updateProfile }}
+    >
       {children}
     </AuthContext.Provider>
   );

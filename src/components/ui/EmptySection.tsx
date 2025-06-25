@@ -22,14 +22,16 @@ const EmptySection: React.FC<EmptySectionProps> = ({
       {icon}
       <h3 className="text-xl font-medium text-gray-700 mb-2">{title}</h3>
       <p className="text-gray-500 mb-4">{description}</p>
-      <Button
-        variant="link"
-        leftIcon={<PlusCircle className="h-5 w-5" />}
-        onClick={onButtonClick}
-        className="m-auto"
-      >
-        {buttonText}
-      </Button>
+      {buttonText && onButtonClick && (
+        <Button
+          variant="link"
+          leftIcon={<PlusCircle className="h-5 w-5" />}
+          onClick={onButtonClick}
+          className="m-auto"
+        >
+          {buttonText}
+        </Button>
+      )}
     </div>
   );
 };

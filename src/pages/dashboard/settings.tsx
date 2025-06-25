@@ -4,12 +4,50 @@ import Button from "../../components/ui/Button";
 import AvatarUpload from "../../components/ui/AvatarUpload";
 import { useAuth } from "../../contexts/AuthContext";
 import DashboardSidebar from "../../components/ui/DashboardSidebar";
+import { uploadFilesBatch } from "../../lib/upload";
 
 const SettingsPage: React.FC = () => {
-  const { authState } = useAuth();
+  const { authState, updateProfile } = useAuth();
   const user = authState.user;
 
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(
+    user?.avatar || ""
+  );
+  const [error, setError] = React.useState<string | null>(null);
+  const [success, setSuccess] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
+
   if (!user) return null;
+  const username = user?.username || "";
+  const avatar = user?.avatar || "";
+  const email = user.email || "";
+
+  const onSaveChanges = async () => {
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
+
+    let imageUrl = "";
+    if (selectedFile) {
+      try {
+        const [url] = await uploadFilesBatch([selectedFile], "users", "");
+        imageUrl = url;
+
+        const success = await updateProfile(imageUrl);
+        if (!success) {
+          setError("Failed to update profile. Please try again.");
+        }
+        setSuccess("Profile updated successfully.");
+      } catch {
+        setError("Failed to update profile. Please try again.");
+        setSuccess(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen pb-12">
       <div className="bg-slate-800 py-12">
@@ -23,7 +61,10 @@ const SettingsPage: React.FC = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <DashboardSidebar activeTab={"settings"} user={user} />
+          <DashboardSidebar
+            activeTab={"settings"}
+            user={{ username, email, avatar }}
+          />
 
           <div className="lg:col-span-3">
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -31,12 +72,17 @@ const SettingsPage: React.FC = () => {
 
               <div className="space-y-8">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
+                  <h3 className="text-lg font-semibold mb-4">
+                    Profile Information
+                  </h3>
                   <div className="relative inline-block mb-4">
                     <AvatarUpload
-                      src={user.avatar}
-                      alt={user.username}
-                      onChange={() => {}}
+                      src={previewUrl || avatar}
+                      alt={username}
+                      onChange={(file: File) => {
+                        setPreviewUrl(URL.createObjectURL(file));
+                        setSelectedFile(file);
+                      }}
                     />
                   </div>
                   <div className="grid grid-cols-1 gap-4">
@@ -47,7 +93,7 @@ const SettingsPage: React.FC = () => {
                       <input
                         type="email"
                         name="email"
-                        value={user.email}
+                        value={email}
                         readOnly
                         className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                       />
@@ -59,10 +105,25 @@ const SettingsPage: React.FC = () => {
                       <input
                         type="text"
                         name="username"
-                        value={user.username}
+                        value={username}
                         readOnly
                         className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                       />
+                    </div>
+                    {error && (
+                      <p className="text-xs text-red-500 mt-1">{error}</p>
+                    )}
+                    {success && (
+                      <p className="text-xs text-green-600 mt-1">{success}</p>
+                    )}
+                    <div className="mt-4">
+                      <Button
+                        size="small"
+                        onClick={onSaveChanges}
+                        disabled={loading}
+                      >
+                        {loading ? "Saving..." : "Save Changes"}
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -107,7 +168,9 @@ const SettingsPage: React.FC = () => {
                 </div>
 
                 <div className="border-t border-gray-100 pt-6">
-                  <h3 className="text-lg font-semibold mb-4">Notification Preferences</h3>
+                  <h3 className="text-lg font-semibold mb-4">
+                    Notification Preferences
+                  </h3>
                   <div className="space-y-4">
                     <label className="flex items-center">
                       <input
@@ -153,10 +216,12 @@ const SettingsPage: React.FC = () => {
                     <div className="flex items-start">
                       <AlertTriangle className="h-6 w-6 text-red-500 mr-3 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-medium text-red-700">Delete Account</h4>
+                        <h4 className="font-medium text-red-700">
+                          Delete Account
+                        </h4>
                         <p className="text-red-600 text-sm mt-1">
-                          Once you delete your account, there is no going back. Please be
-                          certain.
+                          Once you delete your account, there is no going back.
+                          Please be certain.
                         </p>
                         <button className="mt-4 bg-white border border-red-500 text-red-600 hover:bg-red-50 py-2 px-4 rounded-md transition-colors duration-200">
                           Delete Account

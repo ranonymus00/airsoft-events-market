@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Edit, Trash2, Calendar, User, ChevronRight } from "lucide-react";
 import Button from "../../components/ui/Button";
@@ -10,13 +10,18 @@ import Spinner from "../../components/ui/Spinner";
 
 import { useAuth } from "../../contexts/AuthContext";
 import DashboardSidebar from "../../components/ui/DashboardSidebar";
+import CreateEventForm from "../../components/ui/CreateEventForm";
+import { Event } from "../../types";
+import { api } from "../../lib/api";
 
 const EventsPage: React.FC = () => {
   const { authState } = useAuth();
-  const [events, setEvents] = React.useState<any[]>([]); // Use correct Event type if imported
-  const [loading, setLoading] = React.useState<boolean>(true);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [editEvent, setEditEvent] = useState<Event>();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [showEditForm, setShowEditForm] = useState(false);
 
-  const loadUserEvents = React.useCallback(async () => {
+  const loadUserEvents = useCallback(async () => {
     if (!authState?.user?.id) {
       setEvents([]);
       setLoading(false);
@@ -24,9 +29,9 @@ const EventsPage: React.FC = () => {
     }
     setLoading(true);
     try {
-      const allEvents = await ((window as any).api?.events?.getAll?.() ?? []);
+      const allEvents = await api.events.getAll();
       const filtered = allEvents.filter(
-        (event: any) => event.user_id === authState.user.id
+        (event) => event.user_id === authState?.user?.id
       );
       setEvents(filtered);
     } catch (err) {
@@ -37,21 +42,21 @@ const EventsPage: React.FC = () => {
     }
   }, [authState?.user?.id]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadUserEvents();
   }, [loadUserEvents]);
 
-  const handleEditEvent = React.useCallback((_event: any) => {
-    // Future: Implement edit event modal/logic
-    alert("Edit event not yet implemented");
+  const handleEditEvent = useCallback((event: Event) => {
+    setEditEvent(event);
+    setShowEditForm(true);
   }, []);
 
-  const handleDeleteEvent = React.useCallback(
+  const handleDeleteEvent = useCallback(
     async (eventId: string) => {
       if (!window.confirm("Are you sure you want to delete this event?"))
         return;
       try {
-        await (window as any).api?.events?.update?.(eventId, { deleted: true });
+        await api.events.update(eventId, { deleted: true });
         await loadUserEvents();
       } catch {
         alert("Failed to delete event. Please try again.");
@@ -73,10 +78,7 @@ const EventsPage: React.FC = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <DashboardSidebar
-            activeTab={"events"}
-            user={authState.user}
-          />
+          <DashboardSidebar activeTab={"events"} user={authState.user} />
 
           <div className="lg:col-span-3">
             <Section>
@@ -107,10 +109,7 @@ const EventsPage: React.FC = () => {
                                 {event.title}
                               </h3>
                               <p className="text-gray-500 text-sm">
-                                Hosted by:{" "}
-                                {event.user
-                                  ? getHostData(event.user).name
-                                  : "Unknown"}
+                                Hosted by {getHostData(event.user).name}
                               </p>
                             </div>
 
@@ -172,13 +171,22 @@ const EventsPage: React.FC = () => {
                   title="No events yet"
                   description="You haven't created any events yet."
                   buttonText="Create Event"
-                  onButtonClick={() => {}}
+                  onButtonClick={() => setShowEditForm(true)}
                 />
               )}
             </Section>
           </div>
         </div>
       </div>
+      {showEditForm && (
+        <CreateEventForm
+          event={editEvent}
+          onClose={() => {
+            loadUserEvents();
+            setShowEditForm(false);
+          }}
+        />
+      )}
     </div>
   );
 };

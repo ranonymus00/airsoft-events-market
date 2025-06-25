@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { Event, TeamMap } from "../../types";
 import { api } from "../../lib/api";
@@ -20,7 +19,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   onClose,
   event,
 }) => {
-  const navigate = useNavigate();
   const { authState } = useAuth();
   const [formData, setFormData] = useState({
     title: event?.title || "",
@@ -44,29 +42,13 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     }
   }, [authState.user?.team?.id]);
 
-  useEffect(() => {
-    if (event) {
-      setFormData({
-        title: event.title,
-        description: event.description,
-        map_id: event.map_id || "",
-        date: event.date,
-        start_time: event.start_time,
-        end_time: event.end_time,
-        image: event.image,
-        rules: event.rules,
-        max_participants: event.max_participants,
-      });
-    }
-  }, [event]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authState.user) {
       alert("You must be logged in to create or edit an event");
       return;
     }
-    let imageUrl = "";
+    let imageUrl = event?.image || "";
     if (imageFile) {
       try {
         const [url] = await uploadFilesBatch([imageFile], "events", "images");
@@ -76,7 +58,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
         return;
       }
     }
-    console.log(event);
+
     if (event) {
       try {
         // Edit mode
@@ -94,20 +76,15 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     } else {
       try {
         // Create mode
-        const newEvent: Event = {
+        const newEvent: Partial<Event> = {
           id: crypto.randomUUID(),
           ...formData,
           image: imageUrl,
           user_id: authState.user.id,
-          user: authState.user,
-          participants: [],
-          registrations: [],
           created_at: new Date().toISOString(),
           canceled: false,
         };
-        // Here you would typically make an API call to save the event
-        // For now, we'll just navigate to the event page
-        navigate(`/events/${newEvent.id}`);
+        await api.events.create(newEvent);
         onClose();
       } catch (err) {
         alert("Failed to edit the event. Please try again.");

@@ -84,13 +84,13 @@ const EventRegistrationsList: React.FC<EventRegistrationsListProps> = ({
                   <p className="text-gray-700">{registration.message}</p>
                 </div>
 
-                <div className="mt-3">
-                  <img
-                    src={registration.proof_image}
-                    alt="Proof of equipment/experience"
-                    className="w-full max-w-md rounded-lg"
-                  />
-                </div>
+                <a
+                  href={registration.proof_image}
+                  target="_blank"
+                  className="text-blue-500 underline"
+                >
+                  Proof of register
+                </a>
               </>
             )}
           </div>

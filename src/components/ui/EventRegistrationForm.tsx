@@ -3,6 +3,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { Event } from "../../types";
 import Button from "./Button";
 import FileUpload from "./FileUpload";
+import { api } from "../../lib/api";
 
 interface EventFormData {
   message: string;
@@ -11,9 +12,9 @@ interface EventFormData {
 }
 
 interface EventRegistrationFormProps {
-  onSubmit: (formData: EventFormData) => Promise<void>;
+  onSubmit: () => Promise<void>;
   onCancel: () => void;
-  event?: Event;
+  event: Event;
 }
 
 const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
@@ -52,10 +53,15 @@ const EventRegistrationForm: React.FC<EventRegistrationFormProps> = ({
           return;
         }
       }
-      onSubmit({
-        ...formData,
-        proofImage: proofImageUrl,
-      });
+
+      await api.events.register(
+        event.id,
+        formData.message,
+        proofImageUrl,
+        formData.numberOfParticipants
+      );
+
+      onSubmit();
     } catch (error) {
       console.error("Error submitting form:", error);
     } finally {

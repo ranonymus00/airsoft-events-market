@@ -7,13 +7,9 @@ export async function uploadToSupabase(file: File, bucket: string, folder: strin
   const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
   const { error } = await supabase.storage.from(bucket).upload(fileName, file, { upsert: true });
   if (error) throw error;
-  // If using signed URLs for private buckets:
-  const { data: signedData, error: signedError } = await supabase
-    .storage
-    .from(bucket)
-    .createSignedUrl(fileName, 60 * 60);
-  if (signedError) throw signedError;
-  return signedData.signedUrl;
+  // For public buckets, return the public URL directly
+  const publicUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${bucket}/${fileName}`;
+  return publicUrl;
 }
 
 // Upload an array of files to a bucket/folder and return an array of URLs

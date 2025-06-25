@@ -9,13 +9,13 @@ import {
 
 /**
  * Transforms nested team data from Supabase queries
- * Handles the common pattern: user.team?.team || null
+ * Handles the common pattern: ?.team?.team || null
  */
 export const transformUserTeam = (user: User): User => {
   if (!user) return user;
   return {
     ...user,
-    team: user.team ?? null,
+    team: user.team?.team ?? null,
   };
 };
 

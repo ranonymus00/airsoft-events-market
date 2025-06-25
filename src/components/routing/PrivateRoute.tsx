@@ -10,6 +10,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const { authState } = useAuth();
   const location = useLocation();
 
+
   if (authState.loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -17,13 +18,6 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
       </div>
     );
   }
-
-  if (!authState.isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  return <>{children}</>;
-
 
   if (!authState.isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;

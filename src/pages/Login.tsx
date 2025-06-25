@@ -8,7 +8,6 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const { login, authState } = useAuth();
   const navigate = useNavigate();
 
@@ -28,32 +27,16 @@ const Login: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      // For demo purpose, let's pretend any valid email format works with any password
-      const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-      if (!isValid) {
-        setError("Please enter a valid email address");
-        setIsLoading(false);
-        return;
-      }
-
-      const success = await login(email, password);
-      if (success) {
-        navigate("/dashboard");
-      } else {
-        setError("Invalid email or password");
-      }
-    } catch (err) {
-      setError("An error occurred during login. Please try again.");
-      console.error("Login error:", err);
-    } finally {
-      setIsLoading(false);
+    const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!isValid) {
+      setError("Please enter a valid email address");
+      return;
     }
 
-    return false;
+    const success = await login(email, password);
+    if (!success) {
+      setError("Invalid email or password");
+    }
   };
 
   return (
@@ -74,10 +57,7 @@ const Login: React.FC = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
               </label>
               <div className="mt-1 relative">
@@ -99,10 +79,7 @@ const Login: React.FC = () => {
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="mt-1 relative">
@@ -132,31 +109,21 @@ const Login: React.FC = () => {
                 type="checkbox"
                 className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
               />
-              <label
-                htmlFor="remember-me"
-                className="ml-2 block text-sm text-gray-700"
-              >
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                 Remember me
               </label>
             </div>
 
             <div className="text-sm">
-              <a
-                href="#"
-                className="font-medium text-orange-500 hover:text-orange-600"
-              >
+              <a href="#" className="font-medium text-orange-500 hover:text-orange-600">
                 Forgot your password?
               </a>
             </div>
           </div>
 
           <div>
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full"
-            >
-              {isLoading ? "Signing in..." : "Sign in"}
+            <Button type="submit" disabled={authState.loading} className="w-full">
+              {authState.loading ? "Signing in..." : "Sign in"}
             </Button>
           </div>
         </form>
@@ -164,10 +131,7 @@ const Login: React.FC = () => {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Don't have an account?{" "}
-            <Link
-              to="/register"
-              className="font-medium text-orange-500 hover:text-orange-600"
-            >
+            <Link to="/register" className="font-medium text-orange-500 hover:text-orange-600">
               Register now
             </Link>
           </p>

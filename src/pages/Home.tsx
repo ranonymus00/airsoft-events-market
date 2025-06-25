@@ -7,6 +7,7 @@ import AdSpace from "../components/ui/AdSpace";
 import { api } from "../lib/api";
 import { Event, MarketplaceItem } from "../types";
 import Button from "../components/ui/Button";
+import EmptySection from "../components/ui/EmptySection";
 
 const Home: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -136,21 +137,35 @@ const Home: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl font-bold">Featured Events</h2>
-            <Link to="/events">
-              <Button
-                variant="link"
-                rightIcon={<ChevronRight className="h-5 w-5 ml-1" />}
-              >
-                View all
-              </Button>
-            </Link>
+            {featuredEvents.length > 0 && (
+              <Link to="/events">
+                <Button
+                  variant="link"
+                  rightIcon={<ChevronRight className="h-5 w-5 ml-1" />}
+                >
+                  View all
+                </Button>
+              </Link>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
+          {featuredEvents.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          ) : (
+            <EmptySection
+              icon={
+                <Calendar className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+              }
+              title="No events yet"
+              description="There are no created events yet."
+              buttonText=""
+              onButtonClick={() => {}}
+            />
+          )}
         </div>
       </section>
 
@@ -163,21 +178,35 @@ const Home: React.FC = () => {
                 <h2 className="text-2xl font-bold">
                   Featured Marketplace Items
                 </h2>
-                <Link to="/marketplace">
-                  <Button
-                    variant="link"
-                    rightIcon={<ChevronRight className="h-5 w-5 ml-1" />}
-                  >
-                    View all
-                  </Button>
-                </Link>
+                {featuredEvents.length > 0 && (
+                  <Link to="/marketplace">
+                    <Button
+                      variant="link"
+                      rightIcon={<ChevronRight className="h-5 w-5 ml-1" />}
+                    >
+                      View all
+                    </Button>
+                  </Link>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {featuredItems.slice(0, 3).map((item) => (
-                  <MarketplaceItemCard key={item.id} item={item} />
-                ))}
-              </div>
+              {featuredEvents.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {featuredItems.slice(0, 3).map((item) => (
+                    <MarketplaceItemCard key={item.id} item={item} />
+                  ))}
+                </div>
+              ) : (
+                <EmptySection
+                  icon={
+                    <ShoppingBag className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+                  }
+                  title="No listings yet"
+                  description="There are no marketplace listings yet."
+                  buttonText=""
+                  onButtonClick={() => {}}
+                />
+              )}
             </div>
 
             <div className="lg:col-span-1">

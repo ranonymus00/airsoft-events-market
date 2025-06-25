@@ -33,7 +33,8 @@ export const api = {
           ),
           registrations:event_registrations!event_registrations_event_id_fkey(
             id,
-            status
+            status,
+            number_of_participants
           )
         `
         )
@@ -212,6 +213,49 @@ export const api = {
 
       return transformEventData(data[0]);
     },
+
+    async create(event: Partial<Event>) {
+      const { data, error } = await supabase
+        .from("events")
+        .insert([event])
+        .select(`
+          *,
+          map:team_maps!map_id(*),
+          user:users!events_user_id_fkey(
+            username,
+            avatar,
+            team:team_members!user_id(
+              team:teams(
+                id,
+                name,
+                logo
+              )
+            )
+          ),
+          registrations:event_registrations!event_registrations_event_id_fkey(
+            id,
+            status,
+            message,
+            proof_image,
+            created_at,
+            number_of_participants,
+            user:users!event_registrations_user_id_fkey(
+              username,
+              avatar,
+              team:team_members!user_id(
+                team:teams(
+                  id,
+                  name,
+                  logo
+                )
+              )
+            )
+          )
+        `)
+        .single();
+      if (error) throw error;
+      return transformEventData(data);
+    },
   },
 
   marketplace: {
@@ -385,6 +429,8 @@ export const api = {
     },
 
     update: async (teamId: string, team: Partial<Team>): Promise<Team> => {
+      // Debug log: payload being sent
+      console.log("[teams.update] Payload:", { teamId, team });
       const { data, error } = await supabase
         .from("teams")
         .update(team)
@@ -423,8 +469,22 @@ export const api = {
         `
         )
         .single();
-      console.log(data, error);
-      if (error) throw error;
+      // Debug log: response from Supabase
+      console.log("[teams.update] Supabase response:", { data, error });
+      if (error) {
+        // Log error details for debugging
+        console.error("[teams.update] Supabase error:", error);
+        throw error;
+      }
+      if (!data) {
+        // Log no data case for debugging
+        console.error(
+          "[teams.update] No data returned from Supabase. Possible RLS or permission issue."
+        );
+        throw new Error(
+          "No team was updated. Please check if you have the correct permissions or Row Level Security policies."
+        );
+      }
       return transformTeamData(data);
     },
 

@@ -6,6 +6,7 @@ export interface User {
   avatar: string;
   team: Team | null;
   created_at: string;
+  password: string;
 }
 
 // Authentication types
@@ -163,5 +164,9 @@ export interface DashboardProps {
       };
     };
   };
-  updateProfile: (data: { avatar: string; email: string; username: string }) => Promise<boolean>;
+  updateProfile: (data: {
+    avatar: string;
+    email: string;
+    username: string;
+  }) => Promise<boolean>;
 }

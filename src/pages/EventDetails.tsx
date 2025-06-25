@@ -48,20 +48,10 @@ const EventDetails: React.FC = () => {
     }
   };
 
-  const handleRegistrationSubmit = async (
-    message: string,
-    proofImage: string,
-    numberOfParticipants: number
-  ) => {
+  const handleRegistrationSubmit = async () => {
     if (!event) return;
 
     try {
-      await api.events.register(
-        event.id,
-        message,
-        proofImage,
-        numberOfParticipants
-      );
       await loadEvent();
       setShowRegistrationForm(false);
     } catch (err) {

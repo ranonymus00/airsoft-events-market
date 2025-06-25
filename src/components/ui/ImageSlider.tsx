@@ -11,10 +11,21 @@ interface ImageSliderProps {
 const ImageSlider: React.FC<ImageSliderProps> = ({ images, className }) => {
   if (!images || images.length === 0) return null;
   return (
-    <Slider dots infinite speed={500} slidesToShow={1} slidesToScroll={1} className={className}>
+    <Slider
+      dots
+      speed={500}
+      infinite={false}
+      slidesToShow={1}
+      slidesToScroll={1}
+      className={className}
+    >
       {images.map((url, idx) => (
         <div key={idx}>
-          <img src={url} alt={`Slider image ${idx + 1}`} className="w-full h-64 object-cover rounded" />
+          <img
+            src={url}
+            alt={`Slider image ${idx + 1}`}
+            className="w-full h-64 object-cover rounded"
+          />
         </div>
       ))}
     </Slider>

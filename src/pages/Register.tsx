@@ -10,7 +10,6 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const { register, authState } = useAuth();
   const navigate = useNavigate();
 
@@ -46,20 +45,9 @@ const Register: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      const success = await register(username, email, password);
-      if (success) {
-        navigate("/dashboard");
-      } else {
-        setError("Registration failed. Please try again.");
-      }
-    } catch (err) {
-      setError("An error occurred during registration. Please try again.");
-      console.error("Registration error:", err);
-    } finally {
-      setIsLoading(false);
+    const success = await register(username, email, password);
+    if (!success) {
+      setError("Registration failed. Please try again.");
     }
   };
 
@@ -204,8 +192,8 @@ const Register: React.FC = () => {
           </div>
 
           <div>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create account"}
+            <Button type="submit" disabled={authState.loading}>
+              {authState.loading ? "Creating account..." : "Create account"}
             </Button>
           </div>
         </form>
